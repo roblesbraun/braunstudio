@@ -58,11 +58,31 @@ TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
 
 Also set in Convex dashboard environment variables:
 
+**Required for Authentication:**
+
+- `SITE_URL` - Your application URL (e.g., `http://localhost:3000` for dev, `https://app.braunstud.io` for production)
+- `AUTH_GOOGLE_ID` - Google OAuth Client ID
+- `AUTH_GOOGLE_SECRET` - Google OAuth Client Secret
+
+**Optional:**
+
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_WHATSAPP_FROM`
+
+You can set these via CLI:
+
+```bash
+# For local development
+npx convex env set SITE_URL http://localhost:3000
+
+# For production
+npx convex env set SITE_URL https://app.braunstud.io
+npx convex env set AUTH_GOOGLE_ID your_google_client_id
+npx convex env set AUTH_GOOGLE_SECRET your_google_client_secret
+```
 
 ### Development
 
