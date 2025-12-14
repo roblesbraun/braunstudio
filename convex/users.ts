@@ -152,7 +152,7 @@ export const createCouple = mutation({
         // Check if user with email already exists
         const existingUser = await ctx.db
             .query("users")
-            .withIndex("by_email", (q) => q.eq("email", email))
+            .withIndex("email", (q) => q.eq("email", email))
             .first();
 
         if (existingUser) {

@@ -131,7 +131,7 @@ export default defineSchema({
         // For couples, reference to their wedding
         weddingId: v.optional(v.id("weddings")),
     })
-        .index("by_email", ["email"])
+        .index("email", ["email"]) // Convex Auth requires this exact index name
         .index("by_role", ["role"])
         .index("by_wedding", ["weddingId"]),
 
