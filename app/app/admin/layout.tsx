@@ -4,7 +4,12 @@ import { ReactNode } from "react";
 import { useCurrentUser } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { UserButton } from "@/components/auth/user-button";
+import { AppSidebar } from "@/components/admin/app-sidebar";
+import {
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
     const user = useCurrentUser();
@@ -34,35 +39,27 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     }
 
     return (
-        <div className="min-h-screen flex">
-            {/* Sidebar */}
-            <aside className="w-64 border-r bg-muted/40 p-4 flex flex-col">
-                <div className="font-semibold mb-4">Admin Dashboard</div>
-                <nav className="space-y-2 flex-1">
-                    <a
-                        href="/admin"
-                        className="block px-2 py-1.5 rounded hover:bg-muted"
-                    >
-                        Weddings
-                    </a>
-                    <a
-                        href="/admin/leads"
-                        className="block px-2 py-1.5 rounded hover:bg-muted"
-                    >
-                        Leads
-                    </a>
-                    <a
-                        href="/admin/users"
-                        className="block px-2 py-1.5 rounded hover:bg-muted"
-                    >
-                        Users
-                    </a>
-                </nav>
-                <div className="pt-4 border-t">
-                    <UserButton />
+        <SidebarProvider
+            style={
+                {
+                    "--sidebar-width": "calc(var(--spacing) * 72)",
+                    "--header-height": "calc(var(--spacing) * 12)",
+                } as React.CSSProperties
+            }
+        >
+            <AppSidebar variant="inset" />
+            <SidebarInset>
+                <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                    <SidebarTrigger />
+                </header>
+                <div className="flex flex-1 flex-col">
+                    <div className="@container/main flex flex-1 flex-col gap-2">
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                            <div className="px-4 lg:px-6">{children}</div>
+                        </div>
+                    </div>
                 </div>
-            </aside>
-            <main className="flex-1 p-6">{children}</main>
-        </div>
+            </SidebarInset>
+        </SidebarProvider>
     );
 }
