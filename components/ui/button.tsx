@@ -1,7 +1,8 @@
-import { Button as ButtonPrimitive } from "@base-ui/react/button"
-import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react";
+import { Button as ButtonPrimitive } from "@base-ui/react/button";
+import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
   "focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 rounded-md border border-transparent bg-clip-padding text-xs/relaxed font-medium focus-visible:ring-[2px] aria-invalid:ring-[2px] [&_svg:not([class*='size-'])]:size-4 inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none",
@@ -33,19 +34,58 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * Button component with shadcn-style `asChild` support.
+ * 
+ * When `asChild={true}`, clones the child element and merges button styles/props.
+ * This prevents `asChild` from leaking to DOM and allows using Button as a style wrapper.
+ * Example: <Button asChild><Link href="/">Home</Link></Button>
+ * Results in: Link element with button styles applied (no nested <button>)
+ */
 function Button({
   className,
   variant = "default",
   size = "default",
+  asChild,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+  }) {
+  // Compute button styles
+  const buttonClassName = cn(buttonVariants({ variant, size, className }));
+
+  // Handle shadcn-style `asChild`: clone child element and merge props
+  if (asChild && React.isValidElement(children)) {
+    const childElement = children as React.ReactElement;
+    
+    // Merge button styles with child's existing className
+    const mergedClassName = cn(
+      buttonClassName,
+      childElement.props.className
+    );
+
+    // Clone the child element with merged props
+    // This allows Button to act as a style wrapper without creating a nested button
+    return React.cloneElement(childElement, {
+      ...props,
+      className: mergedClassName,
+      // Explicitly do NOT pass asChild to the cloned element
+    });
+  }
+
+  // Default behavior: render ButtonPrimitive (Base UI's button)
+  // Never pass `asChild` to ButtonPrimitive to prevent it from leaking to DOM
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={buttonClassName}
       {...props}
-    />
-  )
+    >
+      {children}
+    </ButtonPrimitive>
+  );
 }
 
 export { Button, buttonVariants }

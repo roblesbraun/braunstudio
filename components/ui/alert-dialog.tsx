@@ -10,10 +10,46 @@ function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
 }
 
-function AlertDialogTrigger({ ...props }: AlertDialogPrimitive.Trigger.Props) {
+/**
+ * AlertDialogTrigger with shadcn-style `asChild` support.
+ * 
+ * When `asChild={true}`, maps to Base UI's `render` API to avoid nested semantic elements.
+ * Example: <AlertDialogTrigger asChild><Button>Open</Button></AlertDialogTrigger>
+ * Results in: Base UI renders the Button directly (no nested <button> inside <button>)
+ */
+function AlertDialogTrigger({
+  asChild,
+  children,
+  ...props
+}: AlertDialogPrimitive.Trigger.Props & {
+  asChild?: boolean;
+}) {
+  // Map shadcn-style `asChild` to Base UI's `render` API
+  if (asChild && React.isValidElement(children)) {
+    const childElement = children as React.ReactElement;
+
+    // Clone the child element with all its props and children intact
+    // Base UI's render prop will use this element as the render target
+    // and any children passed to Trigger will be forwarded to the render element
+    const renderElement = React.cloneElement(childElement);
+
+    // Use Base UI's render prop: the child element becomes the rendered element
+    // Base UI will handle forwarding any children passed to Trigger to the render element
+    return (
+      <AlertDialogPrimitive.Trigger
+        data-slot="alert-dialog-trigger"
+        render={renderElement}
+        {...props}
+      />
+    );
+  }
+
+  // Default behavior: render normally (supports both children and render prop from Base UI)
   return (
-    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
-  )
+    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props}>
+      {children}
+    </AlertDialogPrimitive.Trigger>
+  );
 }
 
 function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {

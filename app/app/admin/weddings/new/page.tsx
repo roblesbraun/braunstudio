@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -15,25 +15,45 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Id } from "@/convex/_generated/dataModel";
-
-// Available templates (will be moved to a registry later)
-const templates = [
-    { id: "classic", versions: ["v1"] },
-    { id: "modern", versions: ["v1"] },
-];
+import {
+    getAvailableTemplates,
+    getLatestTemplateVersion,
+} from "@/templates/registry";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Calendar01Icon } from "@hugeicons/core-free-icons";
 
 export default function NewWeddingPage() {
     const router = useRouter();
     const createWedding = useMutation(api.weddings.create);
     const couples = useQuery(api.users.list, { role: "couple" });
 
+    // Get available templates from registry
+    const availableTemplates = useMemo(() => getAvailableTemplates(), []);
+    const defaultTemplateId = availableTemplates[0]?.id || "classic";
+    const defaultTemplateVersion = useMemo(() => {
+        try {
+            return getLatestTemplateVersion(defaultTemplateId);
+        } catch {
+            return "v1";
+        }
+    }, [defaultTemplateId]);
+
     const [slug, setSlug] = useState("");
     const [ownerUserId, setOwnerUserId] = useState<string>("");
-    const [templateId, setTemplateId] = useState("classic");
-    const [templateVersion, setTemplateVersion] = useState("v1");
+    const [templateId, setTemplateId] = useState(defaultTemplateId);
+    const [templateVersion, setTemplateVersion] = useState<string | undefined>(
+        undefined
+    );
     const [partner1Name, setPartner1Name] = useState("");
     const [partner2Name, setPartner2Name] = useState("");
-    const [weddingDate, setWeddingDate] = useState("");
+    const [weddingDate, setWeddingDate] = useState<Date | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -51,13 +71,15 @@ export default function NewWeddingPage() {
                 slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
                 ownerUserId: ownerUserId as Id<"users">,
                 templateId,
-                templateVersion,
+                templateVersion: templateVersion || undefined, // Let server default to latest
                 partner1Name: partner1Name || undefined,
                 partner2Name: partner2Name || undefined,
-                weddingDate: weddingDate || undefined,
+                weddingDate: weddingDate
+                    ? weddingDate.toISOString().split("T")[0]
+                    : undefined,
             });
 
-            router.push(`/admin/weddings/${weddingId}`);
+            router.push(`/app/admin/weddings/${weddingId}`);
         } catch (err) {
             setError(
                 err instanceof Error ? err.message : "Failed to create wedding"
@@ -67,7 +89,14 @@ export default function NewWeddingPage() {
         }
     };
 
-    const selectedTemplate = templates.find((t) => t.id === templateId);
+    const selectedTemplate = availableTemplates.find(
+        (t) => t.id === templateId
+    );
+    const effectiveVersion =
+        templateVersion ||
+        (selectedTemplate
+            ? getLatestTemplateVersion(selectedTemplate.id)
+            : defaultTemplateVersion);
 
     return (
         <div className="max-w-2xl space-y-6">
@@ -131,13 +160,17 @@ export default function NewWeddingPage() {
                             <Label htmlFor="template">Template</Label>
                             <Select
                                 value={templateId}
-                                onValueChange={setTemplateId}
+                                onValueChange={(value) => {
+                                    setTemplateId(value);
+                                    // Reset version when template changes
+                                    setTemplateVersion(undefined);
+                                }}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {templates.map((t) => (
+                                    {availableTemplates.map((t) => (
                                         <SelectItem key={t.id} value={t.id}>
                                             {t.id.charAt(0).toUpperCase() +
                                                 t.id.slice(1)}
@@ -148,9 +181,16 @@ export default function NewWeddingPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="version">Version</Label>
+                            <Label htmlFor="version">
+                                Version{" "}
+                                {!templateVersion && (
+                                    <span className="text-xs text-muted-foreground">
+                                        (latest: {effectiveVersion})
+                                    </span>
+                                )}
+                            </Label>
                             <Select
-                                value={templateVersion}
+                                value={templateVersion || effectiveVersion}
                                 onValueChange={setTemplateVersion}
                             >
                                 <SelectTrigger>
@@ -160,6 +200,9 @@ export default function NewWeddingPage() {
                                     {selectedTemplate?.versions.map((v) => (
                                         <SelectItem key={v} value={v}>
                                             {v}
+                                            {v === effectiveVersion &&
+                                                !templateVersion &&
+                                                " (latest)"}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -194,13 +237,39 @@ export default function NewWeddingPage() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="date">Wedding Date</Label>
-                        <Input
-                            id="date"
-                            type="date"
-                            value={weddingDate}
-                            onChange={(e) => setWeddingDate(e.target.value)}
-                        />
+                        <Label>Wedding Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-left font-normal"
+                                >
+                                    <HugeiconsIcon
+                                        icon={Calendar01Icon}
+                                        className="mr-2 h-4 w-4"
+                                    />
+                                    {weddingDate ? (
+                                        format(weddingDate, "PPP")
+                                    ) : (
+                                        <span>Pick a date</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                            >
+                                <Calendar
+                                    mode="single"
+                                    defaultMonth={weddingDate}
+                                    selected={weddingDate}
+                                    onSelect={setWeddingDate}
+                                    captionLayout="dropdown"
+                                    fromYear={new Date().getFullYear()}
+                                    toYear={new Date().getFullYear() + 2}
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
 

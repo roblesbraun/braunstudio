@@ -2,12 +2,40 @@
 
 import { Doc } from "@/convex/_generated/dataModel";
 import { getTemplateComponent } from "@/templates/registry";
-import { RenderMode } from "@/templates/types";
+import {
+    RenderMode,
+    WeddingTemplateProps,
+    WeddingTemplateViewModel,
+} from "@/templates/types";
 import { useMemo } from "react";
 
 interface WeddingRendererProps {
     wedding: Doc<"weddings">;
     renderMode: RenderMode;
+}
+
+/**
+ * Adapts a Convex wedding document to the template view-model format.
+ */
+function adaptWeddingToViewModel(
+    wedding: Doc<"weddings">
+): WeddingTemplateViewModel {
+    // Derive name from partner names with fallback
+    const name =
+        wedding.partner1Name && wedding.partner2Name
+            ? `${wedding.partner1Name} & ${wedding.partner2Name}`
+            : wedding.partner1Name ||
+              wedding.partner2Name ||
+              "Our Wedding";
+
+    // Map slug to subdomain (they're the same in this implementation)
+    const subdomain = wedding.slug;
+
+    return {
+        name,
+        subdomain,
+        date: wedding.weddingDate,
+    };
 }
 
 /**
@@ -21,6 +49,16 @@ export function WeddingRenderer({ wedding, renderMode }: WeddingRendererProps) {
             wedding.templateVersion
         );
     }, [wedding.templateId, wedding.templateVersion]);
+
+    // Adapt Convex doc to template view-model
+    const templateProps = useMemo((): WeddingTemplateProps => {
+        return {
+            wedding: adaptWeddingToViewModel(wedding),
+            theme: wedding.theme,
+            sections: wedding.sections,
+            renderMode,
+        };
+    }, [wedding, renderMode]);
 
     // Generate CSS variables from the palette
     const paletteStyles = useMemo(() => {
@@ -66,7 +104,7 @@ export function WeddingRenderer({ wedding, renderMode }: WeddingRendererProps) {
 
     return (
         <div style={paletteStyles} className="wedding-container">
-            <TemplateComponent wedding={wedding} renderMode={renderMode} />
+            <TemplateComponent {...templateProps} />
         </div>
     );
 }

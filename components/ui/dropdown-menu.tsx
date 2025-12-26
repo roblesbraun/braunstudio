@@ -15,8 +15,46 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
 }
 
-function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
-  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
+/**
+ * DropdownMenuTrigger with shadcn-style `asChild` support.
+ * 
+ * When `asChild={true}`, maps to Base UI's `render` API to avoid nested semantic elements.
+ * Example: <DropdownMenuTrigger asChild><Button>Open</Button></DropdownMenuTrigger>
+ * Results in: Base UI renders the Button directly (no nested <button> inside <button>)
+ */
+function DropdownMenuTrigger({
+  asChild,
+  children,
+  ...props
+}: MenuPrimitive.Trigger.Props & {
+  asChild?: boolean;
+}) {
+  // Map shadcn-style `asChild` to Base UI's `render` API
+  if (asChild && React.isValidElement(children)) {
+    const childElement = children as React.ReactElement;
+
+    // Clone the child element with all its props and children intact
+    // Base UI's render prop will use this element as the render target
+    // and any children passed to Trigger will be forwarded to the render element
+    const renderElement = React.cloneElement(childElement);
+
+    // Use Base UI's render prop: the child element becomes the rendered element
+    // Base UI will handle forwarding any children passed to Trigger to the render element
+    return (
+      <MenuPrimitive.Trigger
+        data-slot="dropdown-menu-trigger"
+        render={renderElement}
+        {...props}
+      />
+    );
+  }
+
+  // Default behavior: render normally (Base UI will render its default button)
+  return (
+    <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props}>
+      {children}
+    </MenuPrimitive.Trigger>
+  );
 }
 
 function DropdownMenuContent({

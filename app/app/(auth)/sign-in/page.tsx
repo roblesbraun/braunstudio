@@ -20,7 +20,6 @@ export default function SignInPage() {
                             <h1 className="text-3xl font-bold">
                                 Welcome to braunstud.io
                             </h1>
-                            <h2 className="text-2xl font-semibold">Sign In</h2>
                             <p className="text-muted-foreground">
                                 Sign in with your Google account to continue
                             </p>

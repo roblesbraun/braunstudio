@@ -25,7 +25,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             asChild
                             className="data-[slot=sidebar-menu-button]:!p-1.5"
                         >
-                            <a href="/admin">
+                            <a href="/app/admin">
                                 <HugeiconsIcon
                                     icon={Calendar01Icon}
                                     className="!h-5 !w-5"

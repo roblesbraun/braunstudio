@@ -18,12 +18,10 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { getAvailableTemplates } from "@/templates/registry";
 
-// Available templates
-const templates = [
-    { id: "classic", versions: ["v1"] },
-    { id: "modern", versions: ["v1"] },
-];
+// Get available templates from registry
+const getTemplates = () => getAvailableTemplates();
 
 // Preset color palettes
 const presetPalettes = {
@@ -214,7 +212,7 @@ export default function WeddingDetailPage({ params }: PageProps) {
         setIsDeleting(true);
         try {
             await deleteWedding({ weddingId: weddingId as Id<"weddings"> });
-            router.push("/admin");
+            router.push("/app/admin");
         } catch (error) {
             console.error("Failed to delete wedding:", error);
             setIsDeleting(false);
@@ -374,7 +372,7 @@ export default function WeddingDetailPage({ params }: PageProps) {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {templates.map((t) => (
+                                        {getTemplates().map((t) => (
                                             <SelectItem key={t.id} value={t.id}>
                                                 {t.id.charAt(0).toUpperCase() +
                                                     t.id.slice(1)}
@@ -398,7 +396,7 @@ export default function WeddingDetailPage({ params }: PageProps) {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {templates
+                                        {getTemplates()
                                             .find(
                                                 (t) =>
                                                     t.id === wedding.templateId

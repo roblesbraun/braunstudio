@@ -4,15 +4,12 @@ import { WeddingTemplateProps } from "@/templates/types";
 
 export default function ClassicTemplateV1({
     wedding,
+    theme,
+    sections,
     renderMode,
 }: WeddingTemplateProps) {
-    const { sections, theme } = wedding;
     const isPreview = renderMode === "preview";
-
-    const coupleNames =
-        wedding.partner1Name && wedding.partner2Name
-            ? `${wedding.partner1Name} & ${wedding.partner2Name}`
-            : wedding.partner1Name || wedding.partner2Name || "Our Wedding";
+    const coupleNames = wedding.name;
 
     return (
         <div className="min-h-screen">
@@ -28,16 +25,17 @@ export default function ClassicTemplateV1({
                                 {sections.hero.subtitle}
                             </p>
                         )}
-                        {wedding.weddingDate && (
+                        {wedding.date && (
                             <p className="text-2xl font-light">
-                                {new Date(
-                                    wedding.weddingDate
-                                ).toLocaleDateString("en-US", {
-                                    weekday: "long",
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                })}
+                                {new Date(wedding.date).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                        weekday: "long",
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                    }
+                                )}
                             </p>
                         )}
                     </div>
@@ -187,19 +185,17 @@ export default function ClassicTemplateV1({
                                 {sections.gifts.message}
                             </p>
                         )}
-                        {wedding.giftsMode === "external" &&
-                            sections.gifts.externalUrl &&
-                            !isPreview && (
-                                <a
-                                    href={sections.gifts.externalUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity"
-                                >
-                                    View Registry
-                                </a>
-                            )}
-                        {wedding.giftsMode === "internal" && !isPreview && (
+                        {sections.gifts.externalUrl && !isPreview && (
+                            <a
+                                href={sections.gifts.externalUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity"
+                            >
+                                View Registry
+                            </a>
+                        )}
+                        {!sections.gifts.externalUrl && !isPreview && (
                             <p className="text-sm text-muted-foreground">
                                 Gift registry coming soon
                             </p>
@@ -252,8 +248,8 @@ export default function ClassicTemplateV1({
             <footer className="py-8 px-4 text-center border-t">
                 <p className="text-sm text-muted-foreground">
                     {coupleNames} •{" "}
-                    {wedding.weddingDate
-                        ? new Date(wedding.weddingDate).getFullYear()
+                    {wedding.date
+                        ? new Date(wedding.date).getFullYear()
                         : new Date().getFullYear()}
                 </p>
             </footer>

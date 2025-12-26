@@ -205,7 +205,7 @@ export default function AdminDashboardPage() {
                         </div>
                         <div className="mt-4 pt-4 border-t">
                             <Link
-                                href="/admin/weddings"
+                                href="/app/admin/weddings"
                                 className="text-sm text-primary hover:underline"
                             >
                                 View all weddings →
@@ -260,7 +260,7 @@ export default function AdminDashboardPage() {
                         </div>
                         <div className="mt-4 pt-4 border-t">
                             <Link
-                                href="/admin/leads"
+                                href="/app/admin/leads"
                                 className="text-sm text-primary hover:underline"
                             >
                                 View all leads →
@@ -314,7 +314,7 @@ export default function AdminDashboardPage() {
                         )}
                         <div className="mt-4 pt-4 border-t">
                             <Link
-                                href="/admin/weddings"
+                                href="/app/admin/weddings"
                                 className="text-sm text-primary hover:underline"
                             >
                                 View all →
@@ -360,7 +360,7 @@ export default function AdminDashboardPage() {
                         )}
                         <div className="mt-4 pt-4 border-t">
                             <Link
-                                href="/admin/leads"
+                                href="/app/admin/leads"
                                 className="text-sm text-primary hover:underline"
                             >
                                 View all →

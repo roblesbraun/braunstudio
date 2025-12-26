@@ -4,15 +4,12 @@ import { WeddingTemplateProps } from "@/templates/types";
 
 export default function ModernTemplateV1({
     wedding,
+    theme,
+    sections,
     renderMode,
 }: WeddingTemplateProps) {
-    const { sections, theme } = wedding;
     const isPreview = renderMode === "preview";
-
-    const coupleNames =
-        wedding.partner1Name && wedding.partner2Name
-            ? `${wedding.partner1Name} & ${wedding.partner2Name}`
-            : wedding.partner1Name || wedding.partner2Name || "Our Wedding";
+    const coupleNames = wedding.name;
 
     return (
         <div className="min-h-screen">
@@ -26,15 +23,16 @@ export default function ModernTemplateV1({
                         <h1 className="text-6xl md:text-8xl font-light tracking-tight">
                             {sections.hero.title || coupleNames}
                         </h1>
-                        {wedding.weddingDate && (
+                        {wedding.date && (
                             <p className="text-xl font-light tracking-wide">
-                                {new Date(
-                                    wedding.weddingDate
-                                ).toLocaleDateString("en-US", {
-                                    month: "long",
-                                    day: "numeric",
-                                    year: "numeric",
-                                })}
+                                {new Date(wedding.date).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                    }
+                                )}
                             </p>
                         )}
                         {sections.hero.subtitle && (
@@ -236,20 +234,18 @@ export default function ModernTemplateV1({
                                 {sections.gifts.message}
                             </p>
                         )}
-                        {wedding.giftsMode === "external" &&
-                            sections.gifts.externalUrl &&
-                            !isPreview && (
-                                <a
-                                    href={sections.gifts.externalUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-3 px-8 py-4 bg-foreground text-background hover:opacity-90 transition-opacity"
-                                >
-                                    <span className="text-sm tracking-wide uppercase">
-                                        View Registry
-                                    </span>
-                                </a>
-                            )}
+                        {sections.gifts.externalUrl && !isPreview && (
+                            <a
+                                href={sections.gifts.externalUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-3 px-8 py-4 bg-foreground text-background hover:opacity-90 transition-opacity"
+                            >
+                                <span className="text-sm tracking-wide uppercase">
+                                    View Registry
+                                </span>
+                            </a>
+                        )}
                         {isPreview && (
                             <p className="text-sm text-yellow-600 bg-yellow-50 px-4 py-2 rounded">
                                 Gift interactions disabled in preview mode
@@ -305,15 +301,12 @@ export default function ModernTemplateV1({
                     {coupleNames}
                 </p>
                 <p className="text-xs text-muted-foreground/60 mt-2">
-                    {wedding.weddingDate
-                        ? new Date(wedding.weddingDate).toLocaleDateString(
-                              "en-US",
-                              {
-                                  month: "long",
-                                  day: "numeric",
-                                  year: "numeric",
-                              }
-                          )
+                    {wedding.date
+                        ? new Date(wedding.date).toLocaleDateString("en-US", {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                          })
                         : ""}
                 </p>
             </footer>

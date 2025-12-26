@@ -27,22 +27,22 @@ type NavigationItem = {
 const navigationItems: NavigationItem[] = [
     {
         title: "Home",
-        url: "/admin",
+        url: "/app/admin",
         icon: LayoutIcon,
     },
     {
         title: "Weddings",
-        url: "/admin/weddings",
+        url: "/app/admin/weddings",
         icon: CalendarIcon,
     },
     {
         title: "Leads",
-        url: "/admin/leads",
+        url: "/app/admin/leads",
         icon: UserAddIcon,
     },
     {
         title: "Users",
-        url: "/admin/users",
+        url: "/app/admin/users",
         icon: UserGroupIcon,
     },
 ];

@@ -6,6 +6,42 @@ import {
     requireWeddingContentEditor,
 } from "./lib/authorization";
 
+// Template registry for server-side validation
+// This must stay in sync with templates/registry.ts
+const VALID_TEMPLATES: Record<string, string[]> = {
+    classic: ["v1"],
+    modern: ["v1"],
+};
+
+// Get latest version for a template (server-side)
+function getLatestTemplateVersion(templateId: string): string {
+    const versions = VALID_TEMPLATES[templateId];
+    if (!versions || versions.length === 0) {
+        throw new Error(
+            `Template "${templateId}" not found. Available templates: ${Object.keys(VALID_TEMPLATES).join(", ")}`
+        );
+    }
+
+    // Sort versions (v1, v2, v3, etc.) and return the highest
+    const sortedVersions = versions.sort((a, b) => {
+        const aNum = parseInt(a.replace(/^v/i, "")) || 0;
+        const bNum = parseInt(b.replace(/^v/i, "")) || 0;
+        return bNum - aNum; // Descending order
+    });
+
+    return sortedVersions[0];
+}
+
+// Validate template ID and version
+function isValidTemplate(
+    templateId: string,
+    templateVersion: string
+): boolean {
+    const versions = VALID_TEMPLATES[templateId];
+    if (!versions) return false;
+    return versions.includes(templateVersion);
+}
+
 // Default palette (shadcn light theme)
 const defaultPalette = {
     background: "0 0% 100%",
@@ -155,7 +191,7 @@ export const create = mutation({
         slug: v.string(),
         ownerUserId: v.id("users"),
         templateId: v.string(),
-        templateVersion: v.string(),
+        templateVersion: v.optional(v.string()),
         partner1Name: v.optional(v.string()),
         partner2Name: v.optional(v.string()),
         weddingDate: v.optional(v.string()),
@@ -179,6 +215,17 @@ export const create = mutation({
             throw new Error("Owner user not found");
         }
 
+        // Determine template version (use provided or default to latest)
+        const templateVersion =
+            args.templateVersion || getLatestTemplateVersion(args.templateId);
+
+        // Validate template ID and version
+        if (!isValidTemplate(args.templateId, templateVersion)) {
+            throw new Error(
+                `Invalid template combination: "${args.templateId}/${templateVersion}". Available templates: ${Object.keys(VALID_TEMPLATES).map((id) => `${id} (${VALID_TEMPLATES[id].join(", ")})`).join(", ")}`
+            );
+        }
+
         // Create the wedding
         const weddingId = await ctx.db.insert("weddings", {
             slug: args.slug,
@@ -186,7 +233,7 @@ export const create = mutation({
             ownerUserId: args.ownerUserId,
             previewToken: generatePreviewToken(),
             templateId: args.templateId,
-            templateVersion: args.templateVersion,
+            templateVersion,
             theme: {
                 palette: defaultPalette,
                 fontFamily: undefined,
@@ -238,6 +285,13 @@ export const updateTemplate = mutation({
     },
     handler: async (ctx, { weddingId, templateId, templateVersion }) => {
         await requireWeddingContentEditor(ctx, weddingId);
+
+        // Validate template ID and version
+        if (!isValidTemplate(templateId, templateVersion)) {
+            throw new Error(
+                `Invalid template combination: "${templateId}/${templateVersion}". Available templates: ${Object.keys(VALID_TEMPLATES).map((id) => `${id} (${VALID_TEMPLATES[id].join(", ")})`).join(", ")}`
+            );
+        }
 
         await ctx.db.patch(weddingId, {
             templateId,

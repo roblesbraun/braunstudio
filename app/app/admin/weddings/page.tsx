@@ -33,7 +33,7 @@ export default function AdminWeddingsPage() {
                         Manage all wedding sites
                     </p>
                 </div>
-                <Link href="/admin/weddings/new">
+                <Link href="/app/admin/weddings/new">
                     <Button>Create Wedding</Button>
                 </Link>
             </div>
@@ -93,7 +93,7 @@ export default function AdminWeddingsPage() {
                                     <TableCell>
                                         <div className="flex gap-2">
                                             <Link
-                                                href={`/admin/weddings/${wedding._id}`}
+                                                href={`/app/admin/weddings/${wedding._id}`}
                                             >
                                                 <Button
                                                     variant="outline"
