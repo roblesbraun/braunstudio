@@ -14,7 +14,7 @@ export default function LoginPage() {
   const { signIn } = useAuthActions();
 
   const handleGoogleSignIn = () => {
-    void signIn("google", { redirectTo: "/app/admin" });
+    void signIn("google", { redirectTo: "/app" });
   };
 
   return (

@@ -1,0 +1,69 @@
+"use client";
+
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
+
+/**
+ * Smart redirect page for /app route.
+ * Redirects platform admins to /app/admin and couples to /app/couple.
+ */
+export default function AppRedirectPage() {
+  const router = useRouter();
+  const user = useQuery(api.users.viewer);
+
+  useEffect(() => {
+    if (user === undefined) {
+      // Still loading
+      return;
+    }
+
+    if (!user) {
+      // Not authenticated - redirect to login
+      router.push("/login");
+      return;
+    }
+
+    // Check if user is platform admin
+    const isPlatformAdmin = async () => {
+      try {
+        // Try to fetch admin-only data to check if user is admin
+        const weddings = await fetch("/api/convex/weddings/list");
+        if (weddings.ok) {
+          router.push("/app/admin");
+        } else {
+          router.push("/app/couple");
+        }
+      } catch {
+        // If fetch fails, assume couple
+        router.push("/app/couple");
+      }
+    };
+
+    // Simple heuristic: check if email is in admin allowlist
+    // We'll use a client-side check based on email domain or specific emails
+    const adminEmails = (
+      process.env.NEXT_PUBLIC_PLATFORM_ADMIN_EMAILS || ""
+    )
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (user.email && adminEmails.includes(user.email.toLowerCase())) {
+      router.push("/app/admin");
+    } else {
+      router.push("/app/couple");
+    }
+  }, [user, router]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Redirecting...</p>
+      </div>
+    </div>
+  );
+}

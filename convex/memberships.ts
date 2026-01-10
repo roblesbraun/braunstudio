@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+import { assertPlatformAdmin, assertAuthenticated } from "./authz";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // QUERIES
@@ -12,11 +13,7 @@ import { auth } from "./auth";
 export const listForWedding = query({
   args: { weddingId: v.id("weddings") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check
+    await assertPlatformAdmin(ctx);
 
     const members = await ctx.db
       .query("weddingMembers")
@@ -46,10 +43,7 @@ export const listForWedding = query({
 export const checkAccess = query({
   args: { weddingId: v.id("weddings") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      return { hasAccess: false, role: null };
-    }
+    const userId = await assertAuthenticated(ctx);
 
     // Check membership table
     const membership = await ctx.db
@@ -82,10 +76,7 @@ export const checkAccess = query({
 export const getRole = query({
   args: { weddingId: v.id("weddings") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      return null;
-    }
+    const userId = await assertAuthenticated(ctx);
 
     // Check membership table first
     const membership = await ctx.db
@@ -126,11 +117,7 @@ export const addMember = mutation({
     role: v.union(v.literal("couple"), v.literal("admin")),
   },
   handler: async (ctx, args) => {
-    const currentUserId = await auth.getUserId(ctx);
-    if (!currentUserId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check
+    await assertPlatformAdmin(ctx);
 
     // Check if membership already exists
     const existing = await ctx.db
@@ -161,11 +148,7 @@ export const addMember = mutation({
 export const removeMember = mutation({
   args: { id: v.id("weddingMembers") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check
+    await assertPlatformAdmin(ctx);
 
     const member = await ctx.db.get(args.id);
     if (!member) {
@@ -183,10 +166,7 @@ export const removeMember = mutation({
 export const linkCurrentUser = mutation({
   args: { weddingId: v.id("weddings") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const userId = await assertAuthenticated(ctx);
 
     const user = await ctx.db.get(userId);
     if (!user?.email) {
@@ -236,11 +216,7 @@ export const updateRole = mutation({
     role: v.union(v.literal("couple"), v.literal("admin")),
   },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check
+    await assertPlatformAdmin(ctx);
 
     const member = await ctx.db.get(args.id);
     if (!member) {
