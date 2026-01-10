@@ -1,6 +1,6 @@
 # Wedding Web Platform – Progress Tracker
 
-> **Current focus: Priorities 1–3** (Convex schema, Template system, Subdomain routing)
+> **Current focus: Priority 4 COMPLETE!** (Admin Dashboard with full CRUD, section editors, theme management, guest tools)
 
 ---
 
@@ -52,19 +52,37 @@
 - [x] `convex/memberships.ts` (email pre-assign + post-login linking)
 - [x] `convex/guests.ts` (guest list management)
 - [x] `convex/users.ts` (viewer query)
+- [x] `convex/authz.ts` (platform admin + wedding access helpers)
+- [x] `convex/media.ts` (Convex Storage upload utilities)
 
 ---
 
 ## Priority 4: Admin Dashboard (full)
-- [ ] Wedding list view with filtering/search
-- [ ] Wedding create/edit forms
-- [ ] Template + version assignment UI
-- [ ] Section content editing
-- [ ] Theme color editing
-- [ ] Guest management (manual + CSV upload)
-- [ ] Stripe Connect status view
-- [ ] WhatsApp message sending
-- [ ] Invoice creation
+- [x] **Authorization system** with explicit email allowlist (`convex/authz.ts`)
+- [x] Wedding list view with filtering/search (`app/app/admin/weddings/page.tsx`)
+- [x] Wedding create form with template selector (`app/app/admin/weddings/new/page.tsx`)
+- [x] Wedding editor with 6 tabs (`app/app/admin/weddings/[id]/page.tsx`):
+  - [x] Details tab (name, slug, couple emails, status transitions, delete)
+  - [x] Template tab (template + version assignment)
+  - [x] Sections tab (enable/disable + content editors for all 8 sections)
+    - [x] Hero/CTA editor
+    - [x] Itinerary editor (multi-item with time/title/description/location)
+    - [x] Photos editor (upload via Convex Storage + alt/caption)
+    - [x] Location editor (venue/address/map/directions)
+    - [x] Lodging editor (multi-item hotels with details)
+    - [x] Dress Code editor
+    - [x] Gifts editor (wishlist URL)
+    - [x] RSVP editor
+  - [x] Theme tab (light/dark CSS variable overrides)
+  - [x] Guests tab (table + manual add + CSV import)
+  - [x] Links tab (preview + live URLs with copy)
+- [x] Guest management (manual + CSV upload via `guests.add/addBulk`)
+- [x] Convex Storage integration for photo uploads (`convex/media.ts`)
+- [x] Smart post-login redirect (`/app` → admin or couple based on email)
+- [x] Placeholder pages for Templates/Invoices/Messages/Settings
+- [ ] Stripe Connect status view (UI exists in couple dashboard, admin view pending)
+- [ ] WhatsApp message sending (Priority 11)
+- [ ] Invoice creation (Priority 10)
 
 ## Priority 5: Couple Dashboard (full)
 - [ ] RSVP list view
@@ -78,7 +96,7 @@
 - [x] Per-wedding light/dark CSS variable overrides (basic)
 - [x] `ThemeProvider` (next-themes) integration
 - [x] Wedding page scoped theme wrapper
-- [ ] Admin theme color picker UI
+- [x] Admin theme color picker UI (ThemeTab with light/dark editors)
 
 ## Priority 7: Guest OTP Auth
 - [ ] `convex/otpAuth.ts` – OTP generation + verification

@@ -9,8 +9,10 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as authz from "../authz.js";
 import type * as guests from "../guests.js";
 import type * as http from "../http.js";
+import type * as media from "../media.js";
 import type * as memberships from "../memberships.js";
 import type * as users from "../users.js";
 import type * as weddings from "../weddings.js";
@@ -23,8 +25,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  authz: typeof authz;
   guests: typeof guests;
   http: typeof http;
+  media: typeof media;
   memberships: typeof memberships;
   users: typeof users;
   weddings: typeof weddings;

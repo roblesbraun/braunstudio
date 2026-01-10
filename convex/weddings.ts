@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+import { assertPlatformAdmin, assertAuthenticated } from "./authz";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // QUERIES
@@ -12,11 +13,7 @@ import { auth } from "./auth";
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check when we implement role system
+    await assertPlatformAdmin(ctx);
     return await ctx.db.query("weddings").order("desc").collect();
   },
 });
@@ -40,10 +37,7 @@ export const getBySlug = query({
 export const get = query({
   args: { id: v.id("weddings") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    await assertAuthenticated(ctx);
     return await ctx.db.get(args.id);
   },
 });
@@ -54,10 +48,7 @@ export const get = query({
 export const listForUser = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    const userId = await assertAuthenticated(ctx);
 
     const user = await ctx.db.get(userId);
     if (!user) {
@@ -116,11 +107,7 @@ export const create = mutation({
     coupleEmails: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check
+    await assertPlatformAdmin(ctx);
 
     // Check slug uniqueness
     const existing = await ctx.db
@@ -145,7 +132,17 @@ export const create = mutation({
       status: "draft",
       templateId: args.templateId,
       templateVersion: args.templateVersion,
-      enabledSections: ["hero", "itinerary", "location", "rsvp"],
+      // All mandatory sections enabled by default
+      enabledSections: [
+        "hero",
+        "itinerary",
+        "photos",
+        "location",
+        "lodging",
+        "dressCode",
+        "gifts",
+        "rsvp",
+      ],
       sectionContent: {},
       theme: {
         light: {},
@@ -178,11 +175,7 @@ export const update = mutation({
     coupleEmails: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check
+    await assertPlatformAdmin(ctx);
 
     const wedding = await ctx.db.get(args.id);
     if (!wedding) {
@@ -264,11 +257,7 @@ export const updateTheme = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check
+    await assertPlatformAdmin(ctx);
 
     const wedding = await ctx.db.get(args.id);
     if (!wedding) {
@@ -295,11 +284,7 @@ export const updateStatus = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check
+    await assertPlatformAdmin(ctx);
 
     const wedding = await ctx.db.get(args.id);
     if (!wedding) {
@@ -330,11 +315,7 @@ export const updateStatus = mutation({
 export const remove = mutation({
   args: { id: v.id("weddings") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Add admin role check
+    await assertPlatformAdmin(ctx);
 
     const wedding = await ctx.db.get(args.id);
     if (!wedding) {

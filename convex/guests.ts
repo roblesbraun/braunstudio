@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+import { assertWeddingAccess, assertAuthenticated } from "./authz";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // QUERIES
@@ -12,11 +13,7 @@ import { auth } from "./auth";
 export const listForWedding = query({
   args: { weddingId: v.id("weddings") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Check if user has access to this wedding (admin or couple)
+    await assertWeddingAccess(ctx, args.weddingId);
 
     return await ctx.db
       .query("guests")
@@ -49,10 +46,7 @@ export const getByPhone = query({
 export const getStats = query({
   args: { weddingId: v.id("weddings") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
+    await assertWeddingAccess(ctx, args.weddingId);
 
     const guests = await ctx.db
       .query("guests")
@@ -83,11 +77,7 @@ export const add = mutation({
     whatsappConsent: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Check if user has access to this wedding
+    await assertWeddingAccess(ctx, args.weddingId);
 
     // Check if guest with this phone already exists
     const existing = await ctx.db
@@ -129,11 +119,7 @@ export const addBulk = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-    // TODO: Check if user has access to this wedding
+    await assertWeddingAccess(ctx, args.weddingId);
 
     const results = {
       added: 0,
@@ -183,15 +169,12 @@ export const update = mutation({
     whatsappConsent: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-
     const guest = await ctx.db.get(args.id);
     if (!guest) {
       throw new Error("Guest not found");
     }
+
+    await assertWeddingAccess(ctx, guest.weddingId);
 
     // If changing phone, check for duplicates
     if (args.phone !== undefined && args.phone !== guest.phone) {
@@ -249,15 +232,12 @@ export const updateRsvp = mutation({
 export const remove = mutation({
   args: { id: v.id("guests") },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-
     const guest = await ctx.db.get(args.id);
     if (!guest) {
       throw new Error("Guest not found");
     }
+
+    await assertWeddingAccess(ctx, guest.weddingId);
 
     await ctx.db.delete(args.id);
   },
