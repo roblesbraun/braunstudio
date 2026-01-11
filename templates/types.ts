@@ -136,6 +136,15 @@ export interface SectionContentMap {
 export type SectionKey = keyof SectionContentMap;
 
 /**
+ * Navigation item derived from wedding sections.
+ */
+export interface NavItem {
+  key: SectionKey;
+  label: string;
+  href: string;
+}
+
+/**
  * All mandatory sections that templates must support.
  */
 export const MANDATORY_SECTIONS: SectionKey[] = [
@@ -157,7 +166,8 @@ export interface WeddingData {
   name: string;
   slug: string;
   date?: string;
-  navbarLogoUrl?: string;
+  navbarLogoLightUrl?: string;
+  navbarLogoDarkUrl?: string;
 }
 
 /**

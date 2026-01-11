@@ -99,9 +99,9 @@ const schema = defineSchema({
     // Couple emails for pre-assign access (before they log in)
     coupleEmails: v.array(v.string()),
 
-    // Navbar logo (optional per-wedding branding)
-    navbarLogoUrl: v.optional(v.string()),
-    navbarLogoStorageId: v.optional(v.string()),
+    // Navbar logos (optional per-wedding branding, theme-specific)
+    navbarLogoLightStorageId: v.optional(v.string()),
+    navbarLogoDarkStorageId: v.optional(v.string()),
 
     createdAt: v.number(),
   })

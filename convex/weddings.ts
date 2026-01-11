@@ -20,7 +20,7 @@ export const list = query({
 
 /**
  * Get a wedding by slug (public - used by wedding renderer)
- * Resolves storage URLs for navbar logo if present
+ * Resolves storage URLs for navbar logos (light/dark) if present
  */
 export const getBySlug = query({
   args: { slug: v.string() },
@@ -32,23 +32,31 @@ export const getBySlug = query({
     
     if (!wedding) return null;
 
-    // Resolve navbar logo URL from storage if storageId exists
-    let navbarLogoUrl = wedding.navbarLogoUrl;
-    if (wedding.navbarLogoStorageId) {
-      const url = await ctx.storage.getUrl(wedding.navbarLogoStorageId);
-      navbarLogoUrl = url ?? undefined;
+    // Resolve navbar logo URLs from storage if storageIds exist
+    let navbarLogoLightUrl: string | undefined = undefined;
+    let navbarLogoDarkUrl: string | undefined = undefined;
+
+    if (wedding.navbarLogoLightStorageId) {
+      const url = await ctx.storage.getUrl(wedding.navbarLogoLightStorageId);
+      navbarLogoLightUrl = url ?? undefined;
+    }
+
+    if (wedding.navbarLogoDarkStorageId) {
+      const url = await ctx.storage.getUrl(wedding.navbarLogoDarkStorageId);
+      navbarLogoDarkUrl = url ?? undefined;
     }
 
     return {
       ...wedding,
-      navbarLogoUrl,
+      navbarLogoLightUrl,
+      navbarLogoDarkUrl,
     };
   },
 });
 
 /**
  * Get a wedding by ID (authenticated)
- * Resolves storage URLs for navbar logo if present
+ * Resolves storage URLs for navbar logos (light/dark) if present
  */
 export const get = query({
   args: { id: v.id("weddings") },
@@ -58,16 +66,24 @@ export const get = query({
     
     if (!wedding) return null;
 
-    // Resolve navbar logo URL from storage if storageId exists
-    let navbarLogoUrl = wedding.navbarLogoUrl;
-    if (wedding.navbarLogoStorageId) {
-      const url = await ctx.storage.getUrl(wedding.navbarLogoStorageId);
-      navbarLogoUrl = url ?? undefined;
+    // Resolve navbar logo URLs from storage if storageIds exist
+    let navbarLogoLightUrl: string | undefined = undefined;
+    let navbarLogoDarkUrl: string | undefined = undefined;
+
+    if (wedding.navbarLogoLightStorageId) {
+      const url = await ctx.storage.getUrl(wedding.navbarLogoLightStorageId);
+      navbarLogoLightUrl = url ?? undefined;
+    }
+
+    if (wedding.navbarLogoDarkStorageId) {
+      const url = await ctx.storage.getUrl(wedding.navbarLogoDarkStorageId);
+      navbarLogoDarkUrl = url ?? undefined;
     }
 
     return {
       ...wedding,
-      navbarLogoUrl,
+      navbarLogoLightUrl,
+      navbarLogoDarkUrl,
     };
   },
 });
@@ -203,8 +219,8 @@ export const update = mutation({
     enabledSections: v.optional(v.array(v.string())),
     sectionContent: v.optional(v.record(v.string(), v.any())),
     coupleEmails: v.optional(v.array(v.string())),
-    navbarLogoUrl: v.optional(v.string()),
-    navbarLogoStorageId: v.optional(v.string()),
+    navbarLogoLightStorageId: v.optional(v.string()),
+    navbarLogoDarkStorageId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await assertPlatformAdmin(ctx);
@@ -233,10 +249,10 @@ export const update = mutation({
       updates.sectionContent = args.sectionContent;
     if (args.coupleEmails !== undefined)
       updates.coupleEmails = args.coupleEmails;
-    if (args.navbarLogoUrl !== undefined)
-      updates.navbarLogoUrl = args.navbarLogoUrl;
-    if (args.navbarLogoStorageId !== undefined)
-      updates.navbarLogoStorageId = args.navbarLogoStorageId;
+    if (args.navbarLogoLightStorageId !== undefined)
+      updates.navbarLogoLightStorageId = args.navbarLogoLightStorageId;
+    if (args.navbarLogoDarkStorageId !== undefined)
+      updates.navbarLogoDarkStorageId = args.navbarLogoDarkStorageId;
 
     await ctx.db.patch(args.id, updates);
     return args.id;
@@ -385,11 +401,15 @@ export const remove = mutation({
 });
 
 /**
- * Clear navbar logo from a wedding (admin only)
- * Removes both the URL and storage ID fields
+ * Clear navbar logos from a wedding (admin only)
+ * Removes both light and dark storage ID fields
  */
-export const clearNavbarLogo = mutation({
-  args: { id: v.id("weddings") },
+export const clearNavbarLogos = mutation({
+  args: { 
+    id: v.id("weddings"),
+    clearLight: v.optional(v.boolean()),
+    clearDark: v.optional(v.boolean()),
+  },
   handler: async (ctx, args) => {
     await assertPlatformAdmin(ctx);
 
@@ -398,10 +418,19 @@ export const clearNavbarLogo = mutation({
       throw new Error("Wedding not found");
     }
 
-    await ctx.db.patch(args.id, {
-      navbarLogoUrl: undefined,
-      navbarLogoStorageId: undefined,
-    });
+    const updates: Partial<typeof wedding> = {};
+    
+    // Clear light logo if requested (or both if neither specified)
+    if (args.clearLight || (!args.clearLight && !args.clearDark)) {
+      updates.navbarLogoLightStorageId = undefined;
+    }
+    
+    // Clear dark logo if requested (or both if neither specified)
+    if (args.clearDark || (!args.clearLight && !args.clearDark)) {
+      updates.navbarLogoDarkStorageId = undefined;
+    }
+
+    await ctx.db.patch(args.id, updates);
     return args.id;
   },
 });

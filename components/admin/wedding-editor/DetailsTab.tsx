@@ -29,7 +29,7 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
   const updateWedding = useMutation(api.weddings.update);
   const updateStatus = useMutation(api.weddings.updateStatus);
   const removeWedding = useMutation(api.weddings.remove);
-  const clearNavbarLogo = useMutation(api.weddings.clearNavbarLogo);
+  const clearNavbarLogos = useMutation(api.weddings.clearNavbarLogos);
   const generateUploadUrl = useMutation(api.media.generateUploadUrl);
   const deleteFile = useMutation(api.media.deleteFile);
 
@@ -38,8 +38,10 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
   const [emailInput, setEmailInput] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [isRemovingLogo, setIsRemovingLogo] = useState(false);
+  const [isUploadingLightLogo, setIsUploadingLightLogo] = useState(false);
+  const [isUploadingDarkLogo, setIsUploadingDarkLogo] = useState(false);
+  const [isRemovingLightLogo, setIsRemovingLightLogo] = useState(false);
+  const [isRemovingDarkLogo, setIsRemovingDarkLogo] = useState(false);
 
   const handleAddEmail = () => {
     const trimmed = emailInput.trim();
@@ -110,28 +112,37 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
     }
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    theme: "light" | "dark"
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
+    // Validate file type (SVG only)
+    if (file.type !== "image/svg+xml" && !file.name.endsWith(".svg")) {
+      toast.error("Please upload an SVG file");
       return;
     }
 
     // Validate file size (5MB limit)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error("Image must be smaller than 5MB");
+      toast.error("SVG must be smaller than 5MB");
       return;
     }
 
-    setIsUploadingLogo(true);
+    const setUploading = theme === "light" ? setIsUploadingLightLogo : setIsUploadingDarkLogo;
+    setUploading(true);
+
     try {
       // Delete old logo if exists
-      if (wedding.navbarLogoStorageId) {
-        await deleteFile({ storageId: wedding.navbarLogoStorageId });
+      const oldStorageId =
+        theme === "light"
+          ? wedding.navbarLogoLightStorageId
+          : wedding.navbarLogoDarkStorageId;
+      if (oldStorageId) {
+        await deleteFile({ storageId: oldStorageId });
       }
 
       // Get upload URL
@@ -153,11 +164,13 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
       // Store the storageId - the URL will be resolved dynamically by Convex queries
       await updateWedding({
         id: wedding._id,
-        navbarLogoStorageId: storageId,
+        ...(theme === "light"
+          ? { navbarLogoLightStorageId: storageId }
+          : { navbarLogoDarkStorageId: storageId }),
       });
 
-      toast.success("Logo uploaded successfully");
-      
+      toast.success(`${theme === "light" ? "Light" : "Dark"} logo uploaded successfully`);
+
       // Reset file input
       e.target.value = "";
     } catch (error) {
@@ -165,32 +178,47 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
         error instanceof Error ? error.message : "Failed to upload logo"
       );
     } finally {
-      setIsUploadingLogo(false);
+      setUploading(false);
     }
   };
 
-  const handleLogoRemove = async () => {
-    if (!wedding.navbarLogoStorageId) return;
+  const handleLogoRemove = async (theme: "light" | "dark") => {
+    const storageId =
+      theme === "light"
+        ? wedding.navbarLogoLightStorageId
+        : wedding.navbarLogoDarkStorageId;
 
-    if (!confirm("Are you sure you want to remove the navbar logo?")) {
+    if (!storageId) return;
+
+    if (
+      !confirm(
+        `Are you sure you want to remove the ${theme} mode navbar logo?`
+      )
+    ) {
       return;
     }
 
-    setIsRemovingLogo(true);
+    const setRemoving = theme === "light" ? setIsRemovingLightLogo : setIsRemovingDarkLogo;
+    setRemoving(true);
+
     try {
       // Delete file from storage
-      await deleteFile({ storageId: wedding.navbarLogoStorageId });
+      await deleteFile({ storageId });
 
-      // Clear logo fields from wedding
-      await clearNavbarLogo({ id: wedding._id });
+      // Clear logo field from wedding
+      await clearNavbarLogos({
+        id: wedding._id,
+        clearLight: theme === "light",
+        clearDark: theme === "dark",
+      });
 
-      toast.success("Logo removed successfully");
+      toast.success(`${theme === "light" ? "Light" : "Dark"} logo removed successfully`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to remove logo"
       );
     } finally {
-      setIsRemovingLogo(false);
+      setRemoving(false);
     }
   };
 
@@ -274,22 +302,21 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Navbar Logo</CardTitle>
+          <CardTitle>Navbar Logo (Light Mode)</CardTitle>
           <CardDescription>
-            Upload an optional logo to display in the wedding navbar
+            Upload an SVG logo for light mode
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {wedding.navbarLogoStorageId && wedding.navbarLogoUrl && (
+          {wedding.navbarLogoLightStorageId && wedding.navbarLogoLightUrl && (
             <div className="space-y-2">
-              <Label>Current Logo</Label>
-              <div className="flex items-center gap-4 rounded-lg border p-4">
+              <Label>Current Light Logo</Label>
+              <div className="flex items-center gap-4 rounded-lg border p-4 bg-white">
                 <img
-                  src={wedding.navbarLogoUrl}
-                  alt="Navbar logo preview"
+                  src={wedding.navbarLogoLightUrl}
+                  alt="Light mode navbar logo preview"
                   className="h-12 max-w-[200px] object-contain"
                   onError={(e) => {
-                    // Hide image if it fails to load
                     e.currentTarget.style.display = "none";
                   }}
                 />
@@ -301,47 +328,126 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
             <div>
               <input
                 type="file"
-                id="logo-upload"
-                accept="image/*"
-                onChange={handleLogoUpload}
+                id="logo-light-upload"
+                accept="image/svg+xml,.svg"
+                onChange={(e) => handleLogoUpload(e, "light")}
                 className="hidden"
-                disabled={isUploadingLogo}
+                disabled={isUploadingLightLogo}
               />
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => document.getElementById("logo-upload")?.click()}
-                disabled={isUploadingLogo}
+                onClick={() =>
+                  document.getElementById("logo-light-upload")?.click()
+                }
+                disabled={isUploadingLightLogo}
               >
-                {isUploadingLogo ? (
+                {isUploadingLightLogo ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Upload className="mr-2 h-4 w-4" />
                 )}
-                {wedding.navbarLogoStorageId ? "Replace Logo" : "Upload Logo"}
+                {wedding.navbarLogoLightStorageId
+                  ? "Replace Light Logo"
+                  : "Upload Light Logo"}
               </Button>
             </div>
 
-            {wedding.navbarLogoStorageId && (
+            {wedding.navbarLogoLightStorageId && (
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleLogoRemove}
-                disabled={isRemovingLogo}
+                onClick={() => handleLogoRemove("light")}
+                disabled={isRemovingLightLogo}
               >
-                {isRemovingLogo ? (
+                {isRemovingLightLogo ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Trash2 className="mr-2 h-4 w-4" />
                 )}
-                Remove Logo
+                Remove
               </Button>
             )}
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Upload an image (max 5MB). The logo will appear in the navbar across
-            all wedding pages.
+            Upload an SVG file (max 5MB) for light mode.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Navbar Logo (Dark Mode)</CardTitle>
+          <CardDescription>
+            Upload an SVG logo for dark mode
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {wedding.navbarLogoDarkStorageId && wedding.navbarLogoDarkUrl && (
+            <div className="space-y-2">
+              <Label>Current Dark Logo</Label>
+              <div className="flex items-center gap-4 rounded-lg border p-4 bg-slate-900">
+                <img
+                  src={wedding.navbarLogoDarkUrl}
+                  alt="Dark mode navbar logo preview"
+                  className="h-12 max-w-[200px] object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <div>
+              <input
+                type="file"
+                id="logo-dark-upload"
+                accept="image/svg+xml,.svg"
+                onChange={(e) => handleLogoUpload(e, "dark")}
+                className="hidden"
+                disabled={isUploadingDarkLogo}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  document.getElementById("logo-dark-upload")?.click()
+                }
+                disabled={isUploadingDarkLogo}
+              >
+                {isUploadingDarkLogo ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                {wedding.navbarLogoDarkStorageId
+                  ? "Replace Dark Logo"
+                  : "Upload Dark Logo"}
+              </Button>
+            </div>
+
+            {wedding.navbarLogoDarkStorageId && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleLogoRemove("dark")}
+                disabled={isRemovingDarkLogo}
+              >
+                {isRemovingDarkLogo ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Remove
+              </Button>
+            )}
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Upload an SVG file (max 5MB) for dark mode.
           </p>
         </CardContent>
       </Card>
