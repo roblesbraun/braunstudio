@@ -20,25 +20,55 @@ export const list = query({
 
 /**
  * Get a wedding by slug (public - used by wedding renderer)
+ * Resolves storage URLs for navbar logo if present
  */
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const wedding = await ctx.db
       .query("weddings")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
+    
+    if (!wedding) return null;
+
+    // Resolve navbar logo URL from storage if storageId exists
+    let navbarLogoUrl = wedding.navbarLogoUrl;
+    if (wedding.navbarLogoStorageId) {
+      const url = await ctx.storage.getUrl(wedding.navbarLogoStorageId);
+      navbarLogoUrl = url ?? undefined;
+    }
+
+    return {
+      ...wedding,
+      navbarLogoUrl,
+    };
   },
 });
 
 /**
  * Get a wedding by ID (authenticated)
+ * Resolves storage URLs for navbar logo if present
  */
 export const get = query({
   args: { id: v.id("weddings") },
   handler: async (ctx, args) => {
     await assertAuthenticated(ctx);
-    return await ctx.db.get(args.id);
+    const wedding = await ctx.db.get(args.id);
+    
+    if (!wedding) return null;
+
+    // Resolve navbar logo URL from storage if storageId exists
+    let navbarLogoUrl = wedding.navbarLogoUrl;
+    if (wedding.navbarLogoStorageId) {
+      const url = await ctx.storage.getUrl(wedding.navbarLogoStorageId);
+      navbarLogoUrl = url ?? undefined;
+    }
+
+    return {
+      ...wedding,
+      navbarLogoUrl,
+    };
   },
 });
 
@@ -173,6 +203,8 @@ export const update = mutation({
     enabledSections: v.optional(v.array(v.string())),
     sectionContent: v.optional(v.record(v.string(), v.any())),
     coupleEmails: v.optional(v.array(v.string())),
+    navbarLogoUrl: v.optional(v.string()),
+    navbarLogoStorageId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await assertPlatformAdmin(ctx);
@@ -201,6 +233,10 @@ export const update = mutation({
       updates.sectionContent = args.sectionContent;
     if (args.coupleEmails !== undefined)
       updates.coupleEmails = args.coupleEmails;
+    if (args.navbarLogoUrl !== undefined)
+      updates.navbarLogoUrl = args.navbarLogoUrl;
+    if (args.navbarLogoStorageId !== undefined)
+      updates.navbarLogoStorageId = args.navbarLogoStorageId;
 
     await ctx.db.patch(args.id, updates);
     return args.id;
@@ -345,6 +381,28 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.id);
+  },
+});
+
+/**
+ * Clear navbar logo from a wedding (admin only)
+ * Removes both the URL and storage ID fields
+ */
+export const clearNavbarLogo = mutation({
+  args: { id: v.id("weddings") },
+  handler: async (ctx, args) => {
+    await assertPlatformAdmin(ctx);
+
+    const wedding = await ctx.db.get(args.id);
+    if (!wedding) {
+      throw new Error("Wedding not found");
+    }
+
+    await ctx.db.patch(args.id, {
+      navbarLogoUrl: undefined,
+      navbarLogoStorageId: undefined,
+    });
+    return args.id;
   },
 });
 
