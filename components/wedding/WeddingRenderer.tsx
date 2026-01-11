@@ -11,6 +11,7 @@ import {
 } from "@/templates/types";
 import { WeddingThemeWrapper } from "./WeddingThemeWrapper";
 import { PreviewBanner } from "./PreviewBanner";
+import { WeddingNavbar } from "./WeddingNavbar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 
@@ -120,6 +121,7 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
       slug: wedding.slug,
       // Extract date from hero section if available
       date: (wedding.sectionContent as SectionContentMap)?.hero?.date,
+      navbarLogoUrl: wedding.navbarLogoUrl,
     },
     theme: wedding.theme as WeddingTheme,
     sections: {
@@ -132,9 +134,12 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
   return (
     <WeddingThemeWrapper theme={templateProps.theme}>
       {isPreview && <PreviewBanner />}
-      <div className={isPreview ? "pt-10" : ""}>
-        <TemplateComponent {...templateProps} />
-      </div>
+      <WeddingNavbar
+        weddingName={wedding.name}
+        navbarLogoUrl={wedding.navbarLogoUrl}
+        isPreview={isPreview}
+      />
+      <TemplateComponent {...templateProps} />
     </WeddingThemeWrapper>
   );
 }

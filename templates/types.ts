@@ -157,6 +157,7 @@ export interface WeddingData {
   name: string;
   slug: string;
   date?: string;
+  navbarLogoUrl?: string;
 }
 
 /**
