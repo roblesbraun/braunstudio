@@ -20,10 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, X, Upload, Trash2 } from "lucide-react";
+import { CalendarIcon, Loader2, X, Upload, Trash2 } from "lucide-react";
+import { format, parse } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
   const updateWedding = useMutation(api.weddings.update);
@@ -34,6 +42,12 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
   const deleteFile = useMutation(api.media.deleteFile);
 
   const [name, setName] = useState(wedding.name);
+  const [weddingDate, setWeddingDate] = useState<Date | undefined>(() => {
+    if (wedding.weddingDate) {
+      return parse(wedding.weddingDate, "yyyy-MM-dd", new Date());
+    }
+    return undefined;
+  });
   const [coupleEmails, setCoupleEmails] = useState(wedding.coupleEmails);
   const [emailInput, setEmailInput] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
@@ -58,11 +72,23 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
   const handleSave = async () => {
     setIsUpdating(true);
     try {
-      await updateWedding({
+      const updates: {
+        id: string;
+        name: string;
+        coupleEmails: string[];
+        weddingDate?: string;
+      } = {
         id: wedding._id,
         name,
         coupleEmails,
-      });
+      };
+      
+      // Include weddingDate if it's set
+      if (weddingDate) {
+        updates.weddingDate = format(weddingDate, "yyyy-MM-dd");
+      }
+      
+      await updateWedding(updates);
       toast.success("Wedding details updated");
     } catch (error) {
       toast.error(
@@ -248,6 +274,42 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
               {wedding.status === "live"
                 ? "Slug cannot be changed once wedding is live"
                 : "Slug is set at creation and cannot be changed"}
+            </p>
+          </div>
+
+          {/* Wedding Date */}
+          <div className="space-y-2">
+            <Label htmlFor="weddingDate">Wedding Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="weddingDate"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !weddingDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {weddingDate ? (
+                    format(weddingDate, "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={weddingDate}
+                  onSelect={setWeddingDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">
+              The date of the wedding ceremony. This will be displayed on the
+              wedding website.
             </p>
           </div>
 

@@ -76,9 +76,11 @@ import { useState } from "react";
 function HeroSection({
   content,
   weddingName,
+  weddingDate,
 }: {
   content: WeddingTemplateProps["sections"]["content"]["hero"];
   weddingName: string;
+  weddingDate?: string;
 }) {
   if (!content) return null;
 
@@ -90,10 +92,10 @@ function HeroSection({
             <h1 className="font-sans text-6xl font-bold tracking-tight sm:text-7xl md:text-8xl">
               {content.title || weddingName}
             </h1>
-            {content.date && (
+            {weddingDate && (
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <Calendar className="h-5 w-5" />
-                <p className="text-xl">{content.date}</p>
+                <p className="text-xl">{weddingDate}</p>
               </div>
             )}
             {content.subtitle && (
@@ -838,6 +840,7 @@ export default function ClassicTemplate({
           <HeroSection
             content={content.hero}
             weddingName={wedding.name}
+            weddingDate={wedding.date}
           />
         );
       case "itinerary":

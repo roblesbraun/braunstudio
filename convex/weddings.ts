@@ -3,6 +3,17 @@ import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
 import { assertPlatformAdmin, assertAuthenticated } from "./authz";
 
+// Helper to format yyyy-MM-dd date string to "Month DD, YYYY"
+function formatWeddingDate(dateString: string): string {
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const [year, month, day] = dateString.split("-");
+  const monthName = months[parseInt(month, 10) - 1];
+  return `${monthName} ${parseInt(day, 10)}, ${year}`;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // QUERIES
 // ─────────────────────────────────────────────────────────────────────────────
@@ -150,6 +161,7 @@ export const create = mutation({
     slug: v.string(),
     templateId: v.string(),
     templateVersion: v.string(),
+    weddingDate: v.string(), // Required: yyyy-MM-dd format
     coupleEmails: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
@@ -172,12 +184,21 @@ export const create = mutation({
       );
     }
 
+    // Validate date format (yyyy-MM-dd)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(args.weddingDate)) {
+      throw new Error("Wedding date must be in yyyy-MM-dd format");
+    }
+
+    // Format the wedding date for display in hero section
+    const formattedDate = formatWeddingDate(args.weddingDate);
+
     const weddingId = await ctx.db.insert("weddings", {
       name: args.name,
       slug: args.slug,
       status: "draft",
       templateId: args.templateId,
       templateVersion: args.templateVersion,
+      weddingDate: args.weddingDate,
       // All mandatory sections enabled by default
       enabledSections: [
         "hero",
@@ -189,7 +210,12 @@ export const create = mutation({
         "gifts",
         "rsvp",
       ],
-      sectionContent: {},
+      // Initialize hero section with formatted wedding date
+      sectionContent: {
+        hero: {
+          date: formattedDate,
+        },
+      },
       theme: {
         light: {},
         dark: {},
@@ -216,6 +242,7 @@ export const update = mutation({
     name: v.optional(v.string()),
     templateId: v.optional(v.string()),
     templateVersion: v.optional(v.string()),
+    weddingDate: v.optional(v.string()), // yyyy-MM-dd format
     enabledSections: v.optional(v.array(v.string())),
     sectionContent: v.optional(v.record(v.string(), v.any())),
     coupleEmails: v.optional(v.array(v.string())),
@@ -245,14 +272,36 @@ export const update = mutation({
       updates.templateVersion = args.templateVersion;
     if (args.enabledSections !== undefined)
       updates.enabledSections = args.enabledSections;
-    if (args.sectionContent !== undefined)
-      updates.sectionContent = args.sectionContent;
     if (args.coupleEmails !== undefined)
       updates.coupleEmails = args.coupleEmails;
     if (args.navbarLogoLightStorageId !== undefined)
       updates.navbarLogoLightStorageId = args.navbarLogoLightStorageId;
     if (args.navbarLogoDarkStorageId !== undefined)
       updates.navbarLogoDarkStorageId = args.navbarLogoDarkStorageId;
+
+    // Handle weddingDate update: sync to hero section date
+    if (args.weddingDate !== undefined) {
+      // Validate date format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(args.weddingDate)) {
+        throw new Error("Wedding date must be in yyyy-MM-dd format");
+      }
+      
+      updates.weddingDate = args.weddingDate;
+      
+      // Update hero section date in sectionContent
+      const formattedDate = formatWeddingDate(args.weddingDate);
+      const currentContent = args.sectionContent ?? wedding.sectionContent;
+      updates.sectionContent = {
+        ...currentContent,
+        hero: {
+          ...(currentContent.hero || {}),
+          date: formattedDate,
+        },
+      };
+    } else if (args.sectionContent !== undefined) {
+      // If only sectionContent is being updated (without weddingDate), use it as-is
+      updates.sectionContent = args.sectionContent;
+    }
 
     await ctx.db.patch(args.id, updates);
     return args.id;

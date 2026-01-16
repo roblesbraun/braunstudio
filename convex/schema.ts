@@ -103,6 +103,9 @@ const schema = defineSchema({
     navbarLogoLightStorageId: v.optional(v.string()),
     navbarLogoDarkStorageId: v.optional(v.string()),
 
+    // Wedding date (date-only string in yyyy-MM-dd format)
+    weddingDate: v.optional(v.string()),
+
     createdAt: v.number(),
   })
     .index("by_slug", ["slug"])
