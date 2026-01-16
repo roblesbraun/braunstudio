@@ -121,7 +121,8 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
       slug: wedding.slug,
       // Extract date from hero section if available
       date: (wedding.sectionContent as SectionContentMap)?.hero?.date,
-      navbarLogoUrl: wedding.navbarLogoUrl,
+      navbarLogoLightUrl: wedding.navbarLogoLightUrl,
+      navbarLogoDarkUrl: wedding.navbarLogoDarkUrl,
     },
     theme: wedding.theme as WeddingTheme,
     sections: {
@@ -131,13 +132,50 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
     isPreview,
   };
 
+  // Derive navigation items from enabled sections
+  // Labels come from section content titles with sensible fallbacks
+  const sectionLabelDefaults: Record<SectionKey, string> = {
+    hero: "Home",
+    itinerary: "Itinerary",
+    photos: "Photos",
+    location: "Location",
+    lodging: "Lodging",
+    dressCode: "Dress Code",
+    gifts: "Gifts",
+    rsvp: "RSVP",
+  };
+
+  // Define the desired navbar order (excluding hero and photos)
+  const navbarOrder: SectionKey[] = [
+    "itinerary",
+    "location",
+    "lodging",
+    "dressCode",
+    "gifts",
+    "rsvp",
+  ];
+
+  // Build nav items in the specified order, only including enabled sections
+  const enabledSet = new Set(templateProps.sections.enabled);
+  const navItems = navbarOrder
+    .filter((key) => enabledSet.has(key))
+    .map((key) => ({
+      key,
+      label:
+        templateProps.sections.content[key]?.title ||
+        sectionLabelDefaults[key],
+      href: `#${key}`,
+    }));
+
   return (
     <WeddingThemeWrapper theme={templateProps.theme}>
       {isPreview && <PreviewBanner />}
       <WeddingNavbar
         weddingName={wedding.name}
-        navbarLogoUrl={wedding.navbarLogoUrl}
+        navbarLogoLightUrl={wedding.navbarLogoLightUrl}
+        navbarLogoDarkUrl={wedding.navbarLogoDarkUrl}
         isPreview={isPreview}
+        navItems={navItems}
       />
       <TemplateComponent {...templateProps} />
     </WeddingThemeWrapper>
