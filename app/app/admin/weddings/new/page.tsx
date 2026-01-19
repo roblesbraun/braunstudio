@@ -22,11 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { templateRegistry } from "@/templates/registry";
-import { Loader2, X } from "lucide-react";
+import { CalendarIcon, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function NewWeddingPage() {
   const router = useRouter();
@@ -34,6 +42,7 @@ export default function NewWeddingPage() {
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [weddingDate, setWeddingDate] = useState<Date>();
   const [templateId, setTemplateId] = useState("classic");
   const [templateVersion, setTemplateVersion] = useState("v1");
   const [coupleEmails, setCoupleEmails] = useState<string[]>([]);
@@ -57,12 +66,22 @@ export default function NewWeddingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!weddingDate) {
+      toast.error("Please select a wedding date");
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
+      // Format date as yyyy-MM-dd
+      const formattedDate = format(weddingDate, "yyyy-MM-dd");
+      
       const weddingId = await createWedding({
         name,
         slug,
+        weddingDate: formattedDate,
         templateId,
         templateVersion,
         coupleEmails: coupleEmails.length > 0 ? coupleEmails : undefined,
@@ -140,6 +159,41 @@ export default function NewWeddingPage() {
                 <p className="text-xs text-muted-foreground">
                   URL-friendly identifier (lowercase, numbers, hyphens only).
                   Will be used as: <strong>{slug || "slug"}.braunstud.io</strong>
+                </p>
+              </div>
+
+              {/* Wedding Date */}
+              <div className="space-y-2">
+                <Label htmlFor="weddingDate">Wedding Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="weddingDate"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !weddingDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {weddingDate ? (
+                        format(weddingDate, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={weddingDate}
+                      onSelect={setWeddingDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground">
+                  The date of the wedding ceremony
                 </p>
               </div>
 

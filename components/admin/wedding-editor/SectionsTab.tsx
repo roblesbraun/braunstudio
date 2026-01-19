@@ -352,12 +352,15 @@ function HeroEditor({
         />
       </div>
       <div className="space-y-2">
-        <Label>Date</Label>
+        <Label>Wedding Date</Label>
         <Input
           value={data.date || ""}
-          onChange={(e) => onChange({ ...data, date: e.target.value })}
-          placeholder="June 15, 2024"
+          disabled
+          placeholder="Set in Details tab"
         />
+        <p className="text-xs text-muted-foreground">
+          The wedding date is managed in the Details tab and cannot be edited here.
+        </p>
       </div>
       <div className="space-y-2">
         <Label>Background Image URL</Label>

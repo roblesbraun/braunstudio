@@ -113,14 +113,25 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
     );
   }
 
+  // Helper to format yyyy-MM-dd to "Month DD, YYYY"
+  const formatWeddingDate = (dateString: string): string => {
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const [year, month, day] = dateString.split("-");
+    const monthName = months[parseInt(month, 10) - 1];
+    return `${monthName} ${parseInt(day, 10)}, ${year}`;
+  };
+
   // Prepare template props
   const templateProps: WeddingTemplateProps = {
     wedding: {
       _id: wedding._id,
       name: wedding.name,
       slug: wedding.slug,
-      // Extract date from hero section if available
-      date: (wedding.sectionContent as SectionContentMap)?.hero?.date,
+      // Use canonical weddingDate field, formatted for display
+      date: wedding.weddingDate ? formatWeddingDate(wedding.weddingDate) : undefined,
       navbarLogoLightUrl: wedding.navbarLogoLightUrl,
       navbarLogoDarkUrl: wedding.navbarLogoDarkUrl,
     },
