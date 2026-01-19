@@ -58,6 +58,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useState } from "react";
+import { WeddingCountdown } from "@/components/wedding/WeddingCountdown";
 
 /**
  * Classic Elegance Template v1
@@ -801,9 +802,13 @@ function RsvpSection({
   );
 }
 
+function CountdownSection({ weddingDate }: { weddingDate?: string }) {
+  return <WeddingCountdown weddingDate={weddingDate} />;
+}
+
 /**
  * Main template component.
- * Renders enabled sections in order.
+ * Renders enabled sections in order defined by wedding.enabledSections.
  */
 export default function ClassicTemplate({
   wedding,
@@ -812,72 +817,41 @@ export default function ClassicTemplate({
 }: WeddingTemplateProps) {
   const { enabled, content } = sections;
 
-  // Section render order
-  const sectionOrder: SectionKey[] = [
-    "hero",
-    "itinerary",
-    "photos",
-    "location",
-    "lodging",
-    "dressCode",
-    "gifts",
-    "rsvp",
-  ];
+  // Section registry - maps section keys to their render functions
+  const sectionRegistry: Record<SectionKey, () => React.ReactNode> = {
+    hero: () => (
+      <HeroSection
+        content={content.hero}
+        weddingName={wedding.name}
+        weddingDate={wedding.date}
+      />
+    ),
+    countdown: () => <CountdownSection weddingDate={wedding.weddingDate} />,
+    itinerary: () => <ItinerarySection content={content.itinerary} />,
+    photos: () => <PhotosSection content={content.photos} />,
+    location: () => <LocationSection content={content.location} />,
+    lodging: () => <LodgingSection content={content.lodging} />,
+    dressCode: () => <DressCodeSection content={content.dressCode} />,
+    gifts: () => <GiftsSection content={content.gifts} isPreview={isPreview} />,
+    rsvp: () => <RsvpSection content={content.rsvp} isPreview={isPreview} />,
+  };
 
+  // Render sections in the order specified by enabled array
   const renderSection = (key: SectionKey) => {
-    if (!enabled.includes(key)) return null;
+    const renderFn = sectionRegistry[key];
+    if (!renderFn) return null;
 
     // Wrap each section with id and scroll-margin for navbar navigation
-    const wrapSection = (component: React.ReactNode) => (
+    return (
       <div key={key} id={key} className="scroll-mt-16">
-        {component}
+        {renderFn()}
       </div>
     );
-
-    switch (key) {
-      case "hero":
-        return wrapSection(
-          <HeroSection
-            content={content.hero}
-            weddingName={wedding.name}
-            weddingDate={wedding.date}
-          />
-        );
-      case "itinerary":
-        return wrapSection(
-          <ItinerarySection content={content.itinerary} />
-        );
-      case "photos":
-        return wrapSection(<PhotosSection content={content.photos} />);
-      case "location":
-        return wrapSection(
-          <LocationSection content={content.location} />
-        );
-      case "lodging":
-        return wrapSection(<LodgingSection content={content.lodging} />);
-      case "dressCode":
-        return wrapSection(
-          <DressCodeSection content={content.dressCode} />
-        );
-      case "gifts":
-        return wrapSection(
-          <GiftsSection
-            content={content.gifts}
-            isPreview={isPreview}
-          />
-        );
-      case "rsvp":
-        return wrapSection(
-          <RsvpSection content={content.rsvp} isPreview={isPreview} />
-        );
-      default:
-        return null;
-    }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 md:pb-0 font-sans">
-      {sectionOrder.map(renderSection)}
+      {enabled.map(renderSection)}
 
       {/* Footer */}
       <footer className="border-t py-8 px-4">

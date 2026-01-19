@@ -132,6 +132,8 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
       slug: wedding.slug,
       // Use canonical weddingDate field, formatted for display
       date: wedding.weddingDate ? formatWeddingDate(wedding.weddingDate) : undefined,
+      // Pass canonical yyyy-MM-dd format for countdown computation
+      weddingDate: wedding.weddingDate,
       navbarLogoLightUrl: wedding.navbarLogoLightUrl,
       navbarLogoDarkUrl: wedding.navbarLogoDarkUrl,
     },
@@ -147,6 +149,7 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
   // Labels come from section content titles with sensible fallbacks
   const sectionLabelDefaults: Record<SectionKey, string> = {
     hero: "Home",
+    countdown: "Countdown",
     itinerary: "Itinerary",
     photos: "Photos",
     location: "Location",
@@ -156,7 +159,7 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
     rsvp: "RSVP",
   };
 
-  // Define the desired navbar order (excluding hero and photos)
+  // Define the desired navbar order (excluding hero, countdown, and photos)
   const navbarOrder: SectionKey[] = [
     "itinerary",
     "location",
