@@ -136,6 +136,9 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
       weddingDate: wedding.weddingDate,
       navbarLogoLightUrl: wedding.navbarLogoLightUrl,
       navbarLogoDarkUrl: wedding.navbarLogoDarkUrl,
+      heroImageUrl: wedding.heroImageUrl,
+      venueName: wedding.venueName,
+      venueLocation: wedding.venueLocation,
     },
     theme: wedding.theme as WeddingTheme,
     sections: {
@@ -173,13 +176,15 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
   const enabledSet = new Set(templateProps.sections.enabled);
   const navItems = navbarOrder
     .filter((key) => enabledSet.has(key))
-    .map((key) => ({
-      key,
-      label:
-        templateProps.sections.content[key]?.title ||
-        sectionLabelDefaults[key],
-      href: `#${key}`,
-    }));
+    .map((key) => {
+      const sectionContent = templateProps.sections.content[key];
+      const title = sectionContent && 'title' in sectionContent ? sectionContent.title : undefined;
+      return {
+        key,
+        label: title || sectionLabelDefaults[key],
+        href: `#${key}`,
+      };
+    });
 
   return (
     <WeddingThemeWrapper theme={templateProps.theme}>

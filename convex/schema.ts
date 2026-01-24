@@ -103,8 +103,15 @@ const schema = defineSchema({
     navbarLogoLightStorageId: v.optional(v.string()),
     navbarLogoDarkStorageId: v.optional(v.string()),
 
+    // Hero image (optional background for hero section)
+    heroImageStorageId: v.optional(v.string()),
+
     // Wedding date (date-only string in yyyy-MM-dd format)
     weddingDate: v.optional(v.string()),
+
+    // Venue metadata (for hero section overlays)
+    venueName: v.optional(v.string()),
+    venueLocation: v.optional(v.string()),
 
     createdAt: v.number(),
   })

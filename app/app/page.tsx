@@ -26,24 +26,7 @@ export default function AppRedirectPage() {
       return;
     }
 
-    // Check if user is platform admin
-    const isPlatformAdmin = async () => {
-      try {
-        // Try to fetch admin-only data to check if user is admin
-        const weddings = await fetch("/api/convex/weddings/list");
-        if (weddings.ok) {
-          router.push("/app/admin");
-        } else {
-          router.push("/app/couple");
-        }
-      } catch {
-        // If fetch fails, assume couple
-        router.push("/app/couple");
-      }
-    };
-
-    // Simple heuristic: check if email is in admin allowlist
-    // We'll use a client-side check based on email domain or specific emails
+    // Check if email is in admin allowlist (client-side check)
     const adminEmails = (
       process.env.NEXT_PUBLIC_PLATFORM_ADMIN_EMAILS || ""
     )
