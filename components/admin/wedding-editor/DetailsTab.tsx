@@ -33,11 +33,19 @@ import { CalendarIcon, Loader2, X, Upload, Trash2 } from "lucide-react";
 import { format, parse } from "date-fns";
 import { cn } from "@/lib/utils";
 
-export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
+type WeddingWithUrls = Doc<"weddings"> & {
+  navbarLogoLightUrl?: string;
+  navbarLogoDarkUrl?: string;
+  heroImageUrl?: string;
+};
+
+export function DetailsTab({ wedding }: { wedding: WeddingWithUrls }) {
   const updateWedding = useMutation(api.weddings.update);
   const updateStatus = useMutation(api.weddings.updateStatus);
   const removeWedding = useMutation(api.weddings.remove);
   const clearNavbarLogos = useMutation(api.weddings.clearNavbarLogos);
+  const setHeroImage = useMutation(api.weddings.setHeroImage);
+  const clearHeroImage = useMutation(api.weddings.clearHeroImage);
   const generateUploadUrl = useMutation(api.media.generateUploadUrl);
   const deleteFile = useMutation(api.media.deleteFile);
 
@@ -48,6 +56,8 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
     }
     return undefined;
   });
+  const [venueName, setVenueName] = useState(wedding.venueName || "");
+  const [venueLocation, setVenueLocation] = useState(wedding.venueLocation || "");
   const [coupleEmails, setCoupleEmails] = useState(wedding.coupleEmails);
   const [emailInput, setEmailInput] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
@@ -56,6 +66,8 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
   const [isUploadingDarkLogo, setIsUploadingDarkLogo] = useState(false);
   const [isRemovingLightLogo, setIsRemovingLightLogo] = useState(false);
   const [isRemovingDarkLogo, setIsRemovingDarkLogo] = useState(false);
+  const [isUploadingHeroImage, setIsUploadingHeroImage] = useState(false);
+  const [isRemovingHeroImage, setIsRemovingHeroImage] = useState(false);
 
   const handleAddEmail = () => {
     const trimmed = emailInput.trim();
@@ -72,15 +84,12 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
   const handleSave = async () => {
     setIsUpdating(true);
     try {
-      const updates: {
-        id: string;
-        name: string;
-        coupleEmails: string[];
-        weddingDate?: string;
-      } = {
+      const updates: any = {
         id: wedding._id,
         name,
         coupleEmails,
+        venueName,
+        venueLocation,
       };
       
       // Include weddingDate if it's set
@@ -248,6 +257,96 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
     }
   };
 
+  const handleHeroImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type (images only)
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Image must be smaller than 10MB");
+      return;
+    }
+
+    setIsUploadingHeroImage(true);
+
+    try {
+      // Delete old hero image if exists
+      if (wedding.heroImageStorageId) {
+        await deleteFile({ storageId: wedding.heroImageStorageId });
+      }
+
+      // Get upload URL
+      const uploadUrl = await generateUploadUrl();
+
+      // Upload file
+      const result = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      if (!result.ok) {
+        throw new Error("Failed to upload hero image");
+      }
+
+      const { storageId } = await result.json();
+
+      // Store the storageId - the URL will be resolved dynamically by Convex queries
+      await setHeroImage({
+        id: wedding._id,
+        heroImageStorageId: storageId,
+      });
+
+      toast.success("Hero image uploaded successfully");
+
+      // Reset file input
+      e.target.value = "";
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload hero image"
+      );
+    } finally {
+      setIsUploadingHeroImage(false);
+    }
+  };
+
+  const handleHeroImageRemove = async () => {
+    if (!wedding.heroImageStorageId) return;
+
+    if (!confirm("Are you sure you want to remove the hero image?")) {
+      return;
+    }
+
+    setIsRemovingHeroImage(true);
+
+    try {
+      // Delete file from storage
+      await deleteFile({ storageId: wedding.heroImageStorageId });
+
+      // Clear hero image field from wedding
+      await clearHeroImage({
+        id: wedding._id,
+      });
+
+      toast.success("Hero image removed successfully");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to remove hero image"
+      );
+    } finally {
+      setIsRemovingHeroImage(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -313,6 +412,34 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
             </p>
           </div>
 
+          {/* Venue Name */}
+          <div className="space-y-2">
+            <Label htmlFor="venueName">Venue Name</Label>
+            <Input
+              id="venueName"
+              value={venueName}
+              onChange={(e) => setVenueName(e.target.value)}
+              placeholder="e.g., Star Arena"
+            />
+            <p className="text-xs text-muted-foreground">
+              The name of the wedding venue (displayed on hero section).
+            </p>
+          </div>
+
+          {/* Venue Location */}
+          <div className="space-y-2">
+            <Label htmlFor="venueLocation">Venue Location</Label>
+            <Input
+              id="venueLocation"
+              value={venueLocation}
+              onChange={(e) => setVenueLocation(e.target.value)}
+              placeholder="e.g., San Francisco, CA"
+            />
+            <p className="text-xs text-muted-foreground">
+              The city and country of the venue (displayed on hero section).
+            </p>
+          </div>
+
           {/* Couple Emails */}
           <div className="space-y-2">
             <Label htmlFor="email">Couple Emails</Label>
@@ -359,6 +486,82 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
             {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Hero Background Image</CardTitle>
+          <CardDescription>
+            Upload a background image for the hero section
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {wedding.heroImageStorageId && wedding.heroImageUrl && (
+            <div className="space-y-2">
+              <Label>Current Hero Image</Label>
+              <div className="rounded-lg border overflow-hidden">
+                <img
+                  src={wedding.heroImageUrl}
+                  alt="Hero background image preview"
+                  className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <div>
+              <input
+                type="file"
+                id="hero-image-upload"
+                accept="image/*"
+                onChange={handleHeroImageUpload}
+                className="hidden"
+                disabled={isUploadingHeroImage}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  document.getElementById("hero-image-upload")?.click()
+                }
+                disabled={isUploadingHeroImage}
+              >
+                {isUploadingHeroImage ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                {wedding.heroImageStorageId
+                  ? "Replace Hero Image"
+                  : "Upload Hero Image"}
+              </Button>
+            </div>
+
+            {wedding.heroImageStorageId && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleHeroImageRemove}
+                disabled={isRemovingHeroImage}
+              >
+                {isRemovingHeroImage ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Remove
+              </Button>
+            )}
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Upload an image (max 10MB) for the hero section background. The image will be displayed full-width with wedding details overlaid.
+          </p>
         </CardContent>
       </Card>
 
@@ -547,8 +750,7 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
                   onClick={() => handleStatusChange("draft")}
                   disabled={
                     isChangingStatus ||
-                    wedding.status === "live" ||
-                    wedding.status === "draft"
+                    wedding.status === "live"
                   }
                 >
                   Set to Draft
@@ -561,8 +763,7 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
                   onClick={() => handleStatusChange("pending_payment")}
                   disabled={
                     isChangingStatus ||
-                    wedding.status === "live" ||
-                    wedding.status === "pending_payment"
+                    wedding.status === "live"
                   }
                 >
                   Set to Pending Payment
@@ -573,7 +774,7 @@ export function DetailsTab({ wedding }: { wedding: Doc<"weddings"> }) {
                   variant="outline"
                   size="sm"
                   onClick={() => handleStatusChange("live")}
-                  disabled={isChangingStatus || wedding.status === "live"}
+                  disabled={isChangingStatus}
                 >
                   Publish Live
                 </Button>

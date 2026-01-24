@@ -31,7 +31,8 @@ export const list = query({
 
 /**
  * Get a wedding by slug (public - used by wedding renderer)
- * Resolves storage URLs for navbar logos (light/dark) if present
+ * Resolves storage URLs for navbar logos (light/dark) and hero image if present
+ * Also resolves photo URLs in sectionContent.photos.images[]
  */
 export const getBySlug = query({
   args: { slug: v.string() },
@@ -46,6 +47,7 @@ export const getBySlug = query({
     // Resolve navbar logo URLs from storage if storageIds exist
     let navbarLogoLightUrl: string | undefined = undefined;
     let navbarLogoDarkUrl: string | undefined = undefined;
+    let heroImageUrl: string | undefined = undefined;
 
     if (wedding.navbarLogoLightStorageId) {
       const url = await ctx.storage.getUrl(wedding.navbarLogoLightStorageId);
@@ -57,17 +59,46 @@ export const getBySlug = query({
       navbarLogoDarkUrl = url ?? undefined;
     }
 
+    if (wedding.heroImageStorageId) {
+      const url = await ctx.storage.getUrl(wedding.heroImageStorageId);
+      heroImageUrl = url ?? undefined;
+    }
+
+    // Resolve photo URLs in sectionContent.photos.images[]
+    let sectionContent = wedding.sectionContent;
+    if (sectionContent.photos?.images && Array.isArray(sectionContent.photos.images)) {
+      const imagesWithUrls = await Promise.all(
+        sectionContent.photos.images.map(async (image: any) => {
+          if (image.storageId) {
+            const url = await ctx.storage.getUrl(image.storageId);
+            return { ...image, url: url ?? undefined };
+          }
+          return image;
+        })
+      );
+      sectionContent = {
+        ...sectionContent,
+        photos: {
+          ...sectionContent.photos,
+          images: imagesWithUrls,
+        },
+      };
+    }
+
     return {
       ...wedding,
+      sectionContent,
       navbarLogoLightUrl,
       navbarLogoDarkUrl,
+      heroImageUrl,
     };
   },
 });
 
 /**
  * Get a wedding by ID (authenticated)
- * Resolves storage URLs for navbar logos (light/dark) if present
+ * Resolves storage URLs for navbar logos (light/dark) and hero image if present
+ * Also resolves photo URLs in sectionContent.photos.images[]
  */
 export const get = query({
   args: { id: v.id("weddings") },
@@ -80,6 +111,7 @@ export const get = query({
     // Resolve navbar logo URLs from storage if storageIds exist
     let navbarLogoLightUrl: string | undefined = undefined;
     let navbarLogoDarkUrl: string | undefined = undefined;
+    let heroImageUrl: string | undefined = undefined;
 
     if (wedding.navbarLogoLightStorageId) {
       const url = await ctx.storage.getUrl(wedding.navbarLogoLightStorageId);
@@ -91,10 +123,38 @@ export const get = query({
       navbarLogoDarkUrl = url ?? undefined;
     }
 
+    if (wedding.heroImageStorageId) {
+      const url = await ctx.storage.getUrl(wedding.heroImageStorageId);
+      heroImageUrl = url ?? undefined;
+    }
+
+    // Resolve photo URLs in sectionContent.photos.images[]
+    let sectionContent = wedding.sectionContent;
+    if (sectionContent.photos?.images && Array.isArray(sectionContent.photos.images)) {
+      const imagesWithUrls = await Promise.all(
+        sectionContent.photos.images.map(async (image: any) => {
+          if (image.storageId) {
+            const url = await ctx.storage.getUrl(image.storageId);
+            return { ...image, url: url ?? undefined };
+          }
+          return image;
+        })
+      );
+      sectionContent = {
+        ...sectionContent,
+        photos: {
+          ...sectionContent.photos,
+          images: imagesWithUrls,
+        },
+      };
+    }
+
     return {
       ...wedding,
+      sectionContent,
       navbarLogoLightUrl,
       navbarLogoDarkUrl,
+      heroImageUrl,
     };
   },
 });
@@ -248,6 +308,8 @@ export const update = mutation({
     coupleEmails: v.optional(v.array(v.string())),
     navbarLogoLightStorageId: v.optional(v.string()),
     navbarLogoDarkStorageId: v.optional(v.string()),
+    venueName: v.optional(v.string()),
+    venueLocation: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await assertPlatformAdmin(ctx);
@@ -278,6 +340,10 @@ export const update = mutation({
       updates.navbarLogoLightStorageId = args.navbarLogoLightStorageId;
     if (args.navbarLogoDarkStorageId !== undefined)
       updates.navbarLogoDarkStorageId = args.navbarLogoDarkStorageId;
+    if (args.venueName !== undefined)
+      updates.venueName = args.venueName;
+    if (args.venueLocation !== undefined)
+      updates.venueLocation = args.venueLocation;
 
     // Handle weddingDate update: sync to hero section date
     if (args.weddingDate !== undefined) {
@@ -480,6 +546,54 @@ export const clearNavbarLogos = mutation({
     }
 
     await ctx.db.patch(args.id, updates);
+    return args.id;
+  },
+});
+
+/**
+ * Set hero image for a wedding (admin only)
+ * Stores only the storage ID - URL is derived at read time
+ */
+export const setHeroImage = mutation({
+  args: {
+    id: v.id("weddings"),
+    heroImageStorageId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await assertPlatformAdmin(ctx);
+
+    const wedding = await ctx.db.get(args.id);
+    if (!wedding) {
+      throw new Error("Wedding not found");
+    }
+
+    await ctx.db.patch(args.id, {
+      heroImageStorageId: args.heroImageStorageId,
+    });
+
+    return args.id;
+  },
+});
+
+/**
+ * Clear hero image from a wedding (admin only)
+ */
+export const clearHeroImage = mutation({
+  args: {
+    id: v.id("weddings"),
+  },
+  handler: async (ctx, args) => {
+    await assertPlatformAdmin(ctx);
+
+    const wedding = await ctx.db.get(args.id);
+    if (!wedding) {
+      throw new Error("Wedding not found");
+    }
+
+    await ctx.db.patch(args.id, {
+      heroImageStorageId: undefined,
+    });
+
     return args.id;
   },
 });
