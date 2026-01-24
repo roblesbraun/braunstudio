@@ -117,10 +117,18 @@ export interface RsvpContent {
 }
 
 /**
+ * Countdown section content (system/computed section - no editable content)
+ */
+export interface CountdownContent {
+  // No editable content - countdown is computed from wedding.weddingDate
+}
+
+/**
  * All section content types mapped by section key.
  */
 export interface SectionContentMap {
   hero?: HeroContent;
+  countdown?: CountdownContent;
   itinerary?: ItineraryContent;
   photos?: PhotosContent;
   location?: LocationContent;
@@ -165,7 +173,8 @@ export interface WeddingData {
   _id: Id<"weddings">;
   name: string;
   slug: string;
-  date?: string;
+  date?: string; // Formatted display date (e.g., "January 15, 2026")
+  weddingDate?: string; // Canonical yyyy-MM-dd format for countdown computation
   navbarLogoLightUrl?: string;
   navbarLogoDarkUrl?: string;
 }

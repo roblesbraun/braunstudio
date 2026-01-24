@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/accordion";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { Loader2, Plus, Trash2, Upload, ArrowUp, ArrowDown } from "lucide-react";
 import {
   MANDATORY_SECTIONS,
   SectionKey,
@@ -53,11 +53,43 @@ export function SectionsTab({ wedding }: { wedding: Doc<"weddings"> }) {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   const toggleSection = (section: string) => {
-    setEnabledSections((prev) =>
-      prev.includes(section)
-        ? prev.filter((s) => s !== section)
-        : [...prev, section]
-    );
+    setEnabledSections((prev) => {
+      if (prev.includes(section)) {
+        // Remove section
+        return prev.filter((s) => s !== section);
+      } else {
+        // Add section - special handling for countdown
+        if (section === "countdown") {
+          // Insert countdown right after hero, or at start if hero not present
+          const heroIndex = prev.indexOf("hero");
+          if (heroIndex !== -1) {
+            const newSections = [...prev];
+            newSections.splice(heroIndex + 1, 0, section);
+            return newSections;
+          } else {
+            return [section, ...prev];
+          }
+        }
+        // For other sections, append to end
+        return [...prev, section];
+      }
+    });
+  };
+
+  const moveSection = (index: number, direction: "up" | "down") => {
+    setEnabledSections((prev) => {
+      const newSections = [...prev];
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      
+      // Bounds check
+      if (targetIndex < 0 || targetIndex >= newSections.length) {
+        return prev;
+      }
+      
+      // Swap
+      [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
+      return newSections;
+    });
   };
 
   const updateContent = (section: string, content: any) => {
@@ -145,8 +177,71 @@ export function SectionsTab({ wedding }: { wedding: Doc<"weddings"> }) {
     }
   };
 
+  // Section display names
+  const sectionNames: Record<string, string> = {
+    hero: "Hero / CTA",
+    countdown: "Countdown",
+    itinerary: "Itinerary",
+    photos: "Photos",
+    location: "Location",
+    lodging: "Lodging",
+    dressCode: "Dress Code",
+    gifts: "Gifts",
+    rsvp: "RSVP",
+  };
+
   return (
     <div className="space-y-4">
+      {/* Section Order Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Section Order</CardTitle>
+          <CardDescription>
+            Reorder enabled sections - the order here determines the order on the wedding page
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {enabledSections.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No sections enabled. Enable sections below to reorder them.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {enabledSections.map((section, index) => (
+                <div
+                  key={section}
+                  className="flex items-center justify-between rounded-lg border bg-card p-3"
+                >
+                  <span className="font-medium">
+                    {index + 1}. {sectionNames[section] || section}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => moveSection(index, "up")}
+                      disabled={index === 0}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => moveSection(index, "down")}
+                      disabled={index === enabledSections.length - 1}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Section Management</CardTitle>
@@ -173,6 +268,22 @@ export function SectionsTab({ wedding }: { wedding: Doc<"weddings"> }) {
                   onChange={(content) => updateContent("hero", content)}
                 />
               </AccordionContent>
+            </AccordionItem>
+
+            {/* Countdown Section */}
+            <AccordionItem value="countdown">
+              <div className="flex items-center gap-2 py-4">
+                <Switch
+                  checked={enabledSections.includes("countdown")}
+                  onCheckedChange={() => toggleSection("countdown")}
+                />
+                <div className="flex-1 py-0">
+                  <span className="font-medium">Countdown</span>
+                  <p className="text-sm text-muted-foreground">
+                    Live countdown to wedding date (computed from Details tab)
+                  </p>
+                </div>
+              </div>
             </AccordionItem>
 
             {/* Itinerary Section */}
