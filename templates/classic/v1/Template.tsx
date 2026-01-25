@@ -99,7 +99,7 @@ function HeroSection({
             venueName={venueName}
             venueLocation={venueLocation}
             showTopRightDash
-            className="rounded-t-4xl mt-16 border border-black"
+            className="rounded-t-4xl border border-black"
         >
             <div className="text-center px-6">
                 <div className="mx-auto max-w-4xl space-y-6 md:space-y-8">
@@ -127,16 +127,24 @@ function ItinerarySection({
     if (!content || !content.items?.length) return null;
 
     return (
-        <section className="flex min-h-screen items-center py-20">
-            <div className="w-full space-y-12">
-                <div className="container mx-auto px-4">
-                    <div className="text-center space-y-4">
-                        <h2 className="font-sans text-4xl font-bold sm:text-5xl">
-                            {content.title || "Itinerary"}
-                        </h2>
-                    </div>
+        <section className="relative min-h-screen py-20">
+            {/* Background panel with rounded top corners */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
+            />
+
+            {/* Content wrapper */}
+            <div className="relative z-10 container mx-auto px-4 space-y-12">
+                {/* Pill/tag header */}
+                <div className="inline-flex items-center px-4 py-2 rounded-full border border-border bg-card">
+                    <span className="text-sm font-medium tracking-wide">
+                        {content.title || "Itinerary"}
+                    </span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+
+                {/* Event cards grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {content.items.map((event, index) => (
                         <Card
                             key={index}
@@ -172,8 +180,15 @@ function PhotosSection({
     if (!content || !content.images?.length) return null;
 
     return (
-        <section className="flex min-h-screen items-center bg-muted/10 py-20 px-4">
-            <div className="container mx-auto">
+        <section className="relative min-h-screen py-20">
+            {/* Background panel with rounded top corners */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
+            />
+
+            {/* Content wrapper */}
+            <div className="relative z-10 container mx-auto px-4">
                 <div className="mx-auto max-w-6xl">
                     <div className="grid gap-6 md:grid-cols-3">
                         {content.images.slice(0, 3).map((image, index) => (
@@ -205,8 +220,15 @@ function LocationSection({
     if (!content) return null;
 
     return (
-        <section className="flex min-h-screen items-center bg-muted/20 py-20 px-4">
-            <div className="container mx-auto">
+        <section className="relative min-h-screen py-20">
+            {/* Background panel with rounded top corners */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
+            />
+
+            {/* Content wrapper */}
+            <div className="relative z-10 container mx-auto px-4">
                 <div className="mx-auto max-w-6xl space-y-12">
                     <div className="text-center space-y-4">
                         <h2 className="font-sans text-4xl font-bold sm:text-5xl">
@@ -321,8 +343,15 @@ function LodgingSection({
     );
 
     return (
-        <section className="flex min-h-screen items-center py-20 px-4">
-            <div className="container mx-auto">
+        <section className="relative min-h-screen py-20">
+            {/* Background panel with rounded top corners */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
+            />
+
+            {/* Content wrapper */}
+            <div className="relative z-10 container mx-auto px-4">
                 <div className="mx-auto max-w-4xl space-y-12">
                     <div className="text-center space-y-4">
                         <h2 className="font-sans text-4xl font-bold sm:text-5xl">
@@ -371,8 +400,15 @@ function DressCodeSection({
     if (!content) return null;
 
     return (
-        <section className="flex min-h-screen items-center py-20 px-4">
-            <div className="container mx-auto">
+        <section className="relative min-h-screen py-20">
+            {/* Background panel with rounded top corners */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
+            />
+
+            {/* Content wrapper */}
+            <div className="relative z-10 container mx-auto px-4">
                 <div className="mx-auto max-w-4xl space-y-12">
                     <div className="text-center space-y-4">
                         <h2 className="font-sans text-4xl font-bold sm:text-5xl">
@@ -442,8 +478,15 @@ function GiftsSection({
     };
 
     return (
-        <section className="flex min-h-screen items-center bg-muted/20 py-20 px-4">
-            <div className="container mx-auto">
+        <section className="relative min-h-screen py-20">
+            {/* Background panel with rounded top corners */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
+            />
+
+            {/* Content wrapper */}
+            <div className="relative z-10 container mx-auto px-4">
                 <div className="mx-auto max-w-4xl space-y-12">
                     <div className="text-center space-y-4">
                         <h2 className="font-sans text-4xl font-bold sm:text-5xl">
@@ -670,8 +713,15 @@ function RsvpSection({
     };
 
     return (
-        <section className="flex min-h-screen items-center bg-muted/20 py-20 px-4">
-            <div className="container mx-auto">
+        <section className="relative min-h-screen py-20">
+            {/* Background panel with rounded top corners */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
+            />
+
+            {/* Content wrapper */}
+            <div className="relative z-10 container mx-auto px-4">
                 <div className="mx-auto max-w-2xl space-y-12">
                     <div className="text-center space-y-4">
                         <h2 className="font-sans text-4xl font-bold sm:text-5xl">
@@ -950,13 +1000,22 @@ export default function ClassicTemplate({
     };
 
     // Render sections in the order specified by enabled array
-    const renderSection = (key: SectionKey) => {
+    const renderSection = (key: SectionKey, index: number) => {
         const renderFn = sectionRegistry[key];
         if (!renderFn) return null;
 
+        // Add stacking effect - each section stacks on top of previous with increasing z-index
+        // z-index starts at 10 and increases by 5 for each section, capped at 40 (navbar is z-50)
+        const zIndex = Math.min(10 + (index * 5), 40);
+
         // Wrap each section with id and scroll-margin for navbar navigation
         return (
-            <div key={key} id={key} className="scroll-mt-16">
+            <div 
+                key={key} 
+                id={key} 
+                className="scroll-mt-16 sticky top-16"
+                style={{ zIndex }}
+            >
                 {renderFn()}
             </div>
         );
@@ -964,7 +1023,7 @@ export default function ClassicTemplate({
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-20 md:pb-0 font-sans">
-            {enabled.map(renderSection)}
+            {enabled.map((key, index) => renderSection(key, index))}
 
             {/* Footer */}
             <footer className="border-t py-8 px-4">
