@@ -84,7 +84,7 @@ export function HeroSection({
                 <div className="absolute inset-0 z-10 pointer-events-none">
                     {/* Top-left: Wedding Date */}
                     {weddingDate && (
-                        <div className="absolute top-6 left-6 md:top-10 md:left-10">
+                        <div className="absolute top-20 left-6 md:top-24 md:left-10">
                             <p className="text-xs md:text-sm font-medium tracking-wide text-foreground/80">
                                 {weddingDate}
                             </p>
@@ -93,14 +93,14 @@ export function HeroSection({
 
                     {/* Top-right: Decorative dash */}
                     {showTopRightDash && (
-                        <div className="absolute top-6 right-6 md:top-10 md:right-10">
+                        <div className="absolute top-20 right-6 md:top-24 md:right-10">
                             <div className="h-px w-10 bg-foreground/60" />
                         </div>
                     )}
 
                     {/* Bottom-left: Venue Name */}
                     {venueName && (
-                        <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10">
+                        <div className="absolute bottom-24 left-6 md:bottom-32 md:left-10">
                             <p className="text-xs md:text-sm font-medium text-foreground/80">
                                 {venueName}
                             </p>
@@ -109,7 +109,7 @@ export function HeroSection({
 
                     {/* Bottom-right: Venue Location */}
                     {venueLocation && (
-                        <div className="absolute bottom-6 right-6 md:bottom-10 md:right-10">
+                        <div className="absolute bottom-24 right-6 md:bottom-32 md:right-10">
                             <p className="text-xs md:text-sm font-medium text-foreground/80">
                                 {venueLocation}
                             </p>

@@ -73,9 +73,16 @@ export function WeddingCountdown({ weddingDate }: WeddingCountdownProps) {
   // Don't render if no valid countdown or past date
   if (isToday) {
     return (
-      <section className="flex min-h-screen items-center justify-center bg-muted/10 py-20 px-4">
-        <div className="container mx-auto text-center">
-          <h2 className="font-sans text-5xl font-bold sm:text-6xl md:text-7xl">
+      <section className="relative min-h-screen py-20">
+        {/* Background panel with rounded top corners */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-background rounded-t-4xl border border-border"
+        />
+
+        {/* Content wrapper */}
+        <div className="relative z-10 container mx-auto px-4 flex items-center justify-center min-h-screen">
+          <h2 className="font-sans text-5xl font-bold sm:text-6xl md:text-7xl text-center">
             Today&apos;s the Day!
           </h2>
         </div>
@@ -88,8 +95,15 @@ export function WeddingCountdown({ weddingDate }: WeddingCountdownProps) {
   }
 
   return (
-    <section className="flex min-h-screen items-center justify-center bg-muted/10 py-20 px-4">
-      <div className="container mx-auto">
+    <section className="relative min-h-screen py-20">
+      {/* Background panel with rounded top corners */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-background rounded-t-4xl border border-border"
+      />
+
+      {/* Content wrapper */}
+      <div className="relative z-10 container mx-auto px-4">
         <div className="mx-auto max-w-5xl space-y-12">
           <div className="text-center space-y-4">
             <h2 className="font-sans text-4xl font-bold sm:text-5xl">
