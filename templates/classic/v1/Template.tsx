@@ -27,7 +27,6 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import {
     Item,
@@ -57,9 +56,10 @@ import {
     Phone,
     ExternalLink,
 } from "lucide-react";
-import { useState } from "react";
+import React from "react";
 import { WeddingCountdown } from "@/components/wedding/WeddingCountdown";
 import { HeroSection as SharedHeroSection } from "@/components/wedding/HeroSection";
+import { OverlappingSection } from "@/components/wedding/OverlappingSection";
 
 /**
  * Classic Elegance Template v1
@@ -70,55 +70,12 @@ import { HeroSection as SharedHeroSection } from "@/components/wedding/HeroSecti
  * - Responsive carousel for mobile
  * - Interactive RSVP with OTP flow
  * - Gift registry with progress tracking
+ * - Smooth parallax scrolling between sections
  *
  * This version is IMMUTABLE once released.
  */
 
 // Section components
-function HeroSection({
-    content,
-    weddingName,
-    weddingDate,
-    heroImageUrl,
-    venueName,
-    venueLocation,
-}: {
-    content: WeddingTemplateProps["sections"]["content"]["hero"];
-    weddingName: string;
-    weddingDate?: string;
-    heroImageUrl?: string;
-    venueName?: string;
-    venueLocation?: string;
-}) {
-    if (!content) return null;
-
-    return (
-        <SharedHeroSection
-            heroImageUrl={heroImageUrl}
-            weddingDate={weddingDate}
-            venueName={venueName}
-            venueLocation={venueLocation}
-            showTopRightDash
-            className="rounded-t-4xl border border-black"
-        >
-            <div className="text-center px-6">
-                <div className="mx-auto max-w-4xl space-y-6 md:space-y-8">
-                    <div className="space-y-3 md:space-y-4">
-                        <h1 className="font-sans text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl text-foreground">
-                            {content.title || weddingName}
-                        </h1>
-                        {content.subtitle && (
-                            <p className="text-base sm:text-lg text-muted-foreground">
-                                {content.subtitle}
-                            </p>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </SharedHeroSection>
-    );
-}
-
 function ItinerarySection({
     content,
 }: {
@@ -127,48 +84,39 @@ function ItinerarySection({
     if (!content || !content.items?.length) return null;
 
     return (
-        <section className="relative min-h-screen py-20">
-            {/* Background panel with rounded top corners */}
-            <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
-            />
-
-            {/* Content wrapper */}
-            <div className="relative z-10 container mx-auto px-4 space-y-12">
-                {/* Pill/tag header */}
-                <div className="inline-flex items-center px-4 py-2 rounded-full border border-border bg-card">
-                    <span className="text-sm font-medium tracking-wide">
-                        {content.title || "Itinerary"}
-                    </span>
-                </div>
-
-                {/* Event cards grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {content.items.map((event, index) => (
-                        <Card
-                            key={index}
-                            className="flex flex-col items-center justify-center min-h-[180px] sm:min-h-[220px] md:min-h-[260px]"
-                        >
-                            <CardContent className="flex flex-col items-center justify-center py-8">
-                                <div className="text-5xl sm:text-6xl md:text-7xl font-semibold">
-                                    {event.time}
-                                </div>
-                                <div className="mt-4 text-sm sm:text-base tracking-[0.25em] uppercase">
-                                    {event.title}
-                                </div>
-                                {event.location && (
-                                    <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" />
-                                        {event.location}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+        <div className="relative container mx-auto px-4 py-20 space-y-12">
+            {/* Pill/tag header */}
+            <div className="inline-flex items-center px-4 py-2 rounded-full border border-border bg-card">
+                <span className="text-sm font-medium tracking-wide">
+                    {content.title || "Itinerary"}
+                </span>
             </div>
-        </section>
+
+            {/* Event cards grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {content.items.map((event, index) => (
+                    <Card
+                        key={index}
+                        className="flex flex-col items-center justify-center min-h-[180px] sm:min-h-[220px] md:min-h-[260px]"
+                    >
+                        <CardContent className="flex flex-col items-center justify-center py-8">
+                            <div className="text-5xl sm:text-6xl md:text-7xl font-semibold">
+                                {event.time}
+                            </div>
+                            <div className="mt-4 text-sm sm:text-base tracking-[0.25em] uppercase">
+                                {event.title}
+                            </div>
+                            {event.location && (
+                                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {event.location}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </div>
     );
 }
 
@@ -180,35 +128,26 @@ function PhotosSection({
     if (!content || !content.images?.length) return null;
 
     return (
-        <section className="relative min-h-screen py-20">
-            {/* Background panel with rounded top corners */}
-            <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
-            />
-
-            {/* Content wrapper */}
-            <div className="relative z-10 container mx-auto px-4">
-                <div className="mx-auto max-w-6xl">
-                    <div className="grid gap-6 md:grid-cols-3">
-                        {content.images.slice(0, 3).map((image, index) => (
-                            <Card
-                                key={index}
-                                className="overflow-hidden border-0 p-0 gap-0"
-                            >
-                                <CardContent className="p-0">
-                                    <img
-                                        src={image.url}
-                                        alt={image.alt || `Photo ${index + 1}`}
-                                        className="h-[500px] w-full object-cover"
-                                    />
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+        <div className="relative container mx-auto px-4 py-20">
+            <div className="mx-auto max-w-6xl">
+                <div className="grid gap-6 md:grid-cols-3">
+                    {content.images.slice(0, 3).map((image, index) => (
+                        <Card
+                            key={index}
+                            className="overflow-hidden border-0 p-0 gap-0"
+                        >
+                            <CardContent className="p-0">
+                                <img
+                                    src={image.url}
+                                    alt={image.alt || `Photo ${index + 1}`}
+                                    className="h-[500px] w-full object-cover"
+                                />
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
             </div>
-        </section>
+        </div>
     );
 }
 
@@ -220,66 +159,57 @@ function LocationSection({
     if (!content) return null;
 
     return (
-        <section className="relative min-h-screen py-20">
-            {/* Background panel with rounded top corners */}
-            <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
-            />
-
-            {/* Content wrapper */}
-            <div className="relative z-10 container mx-auto px-4">
-                <div className="mx-auto max-w-6xl space-y-12">
-                    <div className="text-center space-y-4">
-                        <h2 className="font-sans text-4xl font-bold sm:text-5xl">
-                            {content.title || "Location"}
-                        </h2>
-                        <p className="text-lg text-muted-foreground">
-                            How to get to our celebration
-                        </p>
-                    </div>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <MapPin className="h-5 w-5" />
-                                {content.venueName}
-                            </CardTitle>
-                            <CardDescription>{content.address}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="overflow-hidden rounded-lg border">
-                                <div className="aspect-video w-full bg-muted flex items-center justify-center">
-                                    <div className="text-center space-y-2">
-                                        <MapPin className="h-12 w-12 mx-auto text-muted-foreground" />
-                                        <p className="text-sm text-muted-foreground">
-                                            Map
-                                        </p>
-                                    </div>
+        <div className="relative container mx-auto px-4 py-20">
+            <div className="mx-auto max-w-6xl space-y-12">
+                <div className="text-center space-y-4">
+                    <h2 className="font-sans text-4xl font-bold sm:text-5xl">
+                        {content.title || "Location"}
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                        How to get to our celebration
+                    </p>
+                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <MapPin className="h-5 w-5" />
+                            {content.venueName}
+                        </CardTitle>
+                        <CardDescription>{content.address}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="overflow-hidden rounded-lg border">
+                            <div className="aspect-video w-full bg-muted flex items-center justify-center">
+                                <div className="text-center space-y-2">
+                                    <MapPin className="h-12 w-12 mx-auto text-muted-foreground" />
+                                    <p className="text-sm text-muted-foreground">
+                                        Map
+                                    </p>
                                 </div>
                             </div>
-                            {content.mapUrl && (
-                                <div className="flex gap-4">
-                                    <Button
-                                        className="flex-1"
-                                        variant="default"
-                                        asChild
+                        </div>
+                        {content.mapUrl && (
+                            <div className="flex gap-4">
+                                <Button
+                                    className="flex-1"
+                                    variant="default"
+                                    asChild
+                                >
+                                    <a
+                                        href={content.mapUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                     >
-                                        <a
-                                            href={content.mapUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            <ExternalLink className="mr-2 h-4 w-4" />
-                                            View Map
-                                        </a>
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                                        <ExternalLink className="mr-2 h-4 w-4" />
+                                        View Map
+                                    </a>
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
-        </section>
+        </div>
     );
 }
 
@@ -343,52 +273,43 @@ function LodgingSection({
     );
 
     return (
-        <section className="relative min-h-screen py-20">
-            {/* Background panel with rounded top corners */}
-            <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
-            />
+        <div className="relative container mx-auto px-4 py-20">
+            <div className="mx-auto max-w-4xl space-y-12">
+                <div className="text-center space-y-4">
+                    <h2 className="font-sans text-4xl font-bold sm:text-5xl">
+                        {content.title || "Lodging"}
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                        Recommended hotels near the venue
+                    </p>
+                </div>
 
-            {/* Content wrapper */}
-            <div className="relative z-10 container mx-auto px-4">
-                <div className="mx-auto max-w-4xl space-y-12">
-                    <div className="text-center space-y-4">
-                        <h2 className="font-sans text-4xl font-bold sm:text-5xl">
-                            {content.title || "Lodging"}
-                        </h2>
-                        <p className="text-lg text-muted-foreground">
-                            Recommended hotels near the venue
-                        </p>
-                    </div>
+                {/* Mobile carousel */}
+                <div className="md:hidden">
+                    <Carousel opts={{ align: "start" }} className="w-full">
+                        <CarouselContent>
+                            {content.items.map((hotel, index) => (
+                                <CarouselItem
+                                    key={index}
+                                    className="sm:basis-4/5"
+                                >
+                                    <HospedajeCard hotel={hotel} />
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="left-2" />
+                        <CarouselNext className="right-2" />
+                    </Carousel>
+                </div>
 
-                    {/* Mobile carousel */}
-                    <div className="md:hidden">
-                        <Carousel opts={{ align: "start" }} className="w-full">
-                            <CarouselContent>
-                                {content.items.map((hotel, index) => (
-                                    <CarouselItem
-                                        key={index}
-                                        className="sm:basis-4/5"
-                                    >
-                                        <HospedajeCard hotel={hotel} />
-                                    </CarouselItem>
-                                ))}
-                            </CarouselContent>
-                            <CarouselPrevious className="left-2" />
-                            <CarouselNext className="right-2" />
-                        </Carousel>
-                    </div>
-
-                    {/* Desktop grid */}
-                    <div className="hidden md:grid gap-6 md:grid-cols-2">
-                        {content.items.map((hotel, index) => (
-                            <HospedajeCard key={index} hotel={hotel} />
-                        ))}
-                    </div>
+                {/* Desktop grid */}
+                <div className="hidden md:grid gap-6 md:grid-cols-2">
+                    {content.items.map((hotel, index) => (
+                        <HospedajeCard key={index} hotel={hotel} />
+                    ))}
                 </div>
             </div>
-        </section>
+        </div>
     );
 }
 
@@ -400,62 +321,52 @@ function DressCodeSection({
     if (!content) return null;
 
     return (
-        <section className="relative min-h-screen py-20">
-            {/* Background panel with rounded top corners */}
-            <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
-            />
-
-            {/* Content wrapper */}
-            <div className="relative z-10 container mx-auto px-4">
-                <div className="mx-auto max-w-4xl space-y-12">
-                    <div className="text-center space-y-4">
-                        <h2 className="font-sans text-4xl font-bold sm:text-5xl">
-                            {content.title || "Dress Code"}
-                        </h2>
-                        <p className="text-lg text-muted-foreground">
-                            Suggestions for our wedding
-                        </p>
-                    </div>
-                    <Card className="mx-auto max-w-2xl">
-                        <CardHeader className="text-center">
-                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                                <Shirt className="h-8 w-8 text-primary" />
-                            </div>
-                            <CardTitle className="text-2xl">
-                                {content.description}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <Separator />
-                            {content.examples &&
-                                content.examples.length > 0 && (
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h4 className="font-semibold mb-2">
-                                                Suggestions:
-                                            </h4>
-                                            <div className="flex flex-wrap gap-2">
-                                                {content.examples.map(
-                                                    (example, index) => (
-                                                        <Badge
-                                                            key={index}
-                                                            variant="secondary"
-                                                        >
-                                                            {example}
-                                                        </Badge>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                        </CardContent>
-                    </Card>
+        <div className="relative container mx-auto px-4 py-20">
+            <div className="mx-auto max-w-4xl space-y-12">
+                <div className="text-center space-y-4">
+                    <h2 className="font-sans text-4xl font-bold sm:text-5xl">
+                        {content.title || "Dress Code"}
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                        Suggestions for our wedding
+                    </p>
                 </div>
+                <Card className="mx-auto max-w-2xl">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                            <Shirt className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle className="text-2xl">
+                            {content.description}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <Separator />
+                        {content.examples && content.examples.length > 0 && (
+                            <div className="space-y-4">
+                                <div>
+                                    <h4 className="font-semibold mb-2">
+                                        Suggestions:
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {content.examples.map(
+                                            (example, index) => (
+                                                <Badge
+                                                    key={index}
+                                                    variant="secondary"
+                                                >
+                                                    {example}
+                                                </Badge>
+                                            ),
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
-        </section>
+        </div>
     );
 }
 
@@ -478,169 +389,156 @@ function GiftsSection({
     };
 
     return (
-        <section className="relative min-h-screen py-20">
-            {/* Background panel with rounded top corners */}
-            <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
-            />
+        <div className="relative container mx-auto px-4 py-20">
+            <div className="mx-auto max-w-4xl space-y-12">
+                <div className="text-center space-y-4">
+                    <h2 className="font-sans text-4xl font-bold sm:text-5xl">
+                        {content.title || "Gifts"}
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                        {content.description ||
+                            "Your presence is our greatest gift, but if you wish to give something..."}
+                    </p>
+                </div>
+                <div className="space-y-6">
+                    {content.mode === "wishlist" && content.wishlistUrl && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Our Gift Registry</CardTitle>
+                                <CardDescription>
+                                    Visit our wishlist to see our registry
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Button asChild size="lg" className="w-full">
+                                    <a
+                                        href={content.wishlistUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <ExternalLink className="mr-2 h-4 w-4" />
+                                        View Our Wishlist
+                                    </a>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
 
-            {/* Content wrapper */}
-            <div className="relative z-10 container mx-auto px-4">
-                <div className="mx-auto max-w-4xl space-y-12">
-                    <div className="text-center space-y-4">
-                        <h2 className="font-sans text-4xl font-bold sm:text-5xl">
-                            {content.title || "Gifts"}
-                        </h2>
-                        <p className="text-lg text-muted-foreground">
-                            {content.description ||
-                                "Your presence is our greatest gift, but if you wish to give something..."}
-                        </p>
-                    </div>
-                    <div className="space-y-6">
-                        {content.mode === "wishlist" && content.wishlistUrl && (
+                    {content.mode === "gifts" &&
+                        content.items &&
+                        content.items.length > 0 && (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Our Gift Registry</CardTitle>
+                                    <CardTitle>Our Gift List</CardTitle>
                                     <CardDescription>
-                                        Visit our wishlist to see our registry
+                                        You can contribute any amount to any
+                                        gift
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <Button
-                                        asChild
-                                        size="lg"
-                                        className="w-full"
-                                    >
-                                        <a
-                                            href={content.wishlistUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            <ExternalLink className="mr-2 h-4 w-4" />
-                                            View Our Wishlist
-                                        </a>
-                                    </Button>
+                                    <div className="w-full rounded-md">
+                                        <ItemGroup className="gap-3 p-1">
+                                            {content.items.map((gift) => {
+                                                const fundedPercentage = 0; // Would come from backend
+                                                return (
+                                                    <Item
+                                                        key={gift.id}
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="flex-col items-start"
+                                                    >
+                                                        <div className="flex w-full items-start gap-2 sm:gap-3">
+                                                            <ItemMedia
+                                                                variant="image"
+                                                                className="size-16 sm:size-20 shrink-0"
+                                                            >
+                                                                {gift.imageUrl ? (
+                                                                    <Image
+                                                                        src={
+                                                                            gift.imageUrl
+                                                                        }
+                                                                        alt={
+                                                                            gift.name
+                                                                        }
+                                                                        width={
+                                                                            80
+                                                                        }
+                                                                        height={
+                                                                            80
+                                                                        }
+                                                                        className="object-cover rounded"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                                                                        <Gift className="h-8 w-8 text-muted-foreground" />
+                                                                    </div>
+                                                                )}
+                                                            </ItemMedia>
+                                                            <ItemContent className="flex-1 min-h-16 sm:h-20 flex flex-col justify-between">
+                                                                <div className="space-y-0">
+                                                                    <ItemTitle className="line-clamp-1 text-xs sm:text-sm leading-tight">
+                                                                        {
+                                                                            gift.name
+                                                                        }
+                                                                    </ItemTitle>
+                                                                    {gift.description && (
+                                                                        <ItemDescription className="line-clamp-1 text-[10px] sm:text-xs leading-tight">
+                                                                            {
+                                                                                gift.description
+                                                                            }
+                                                                        </ItemDescription>
+                                                                    )}
+                                                                    <p className="text-[10px] sm:text-xs font-semibold leading-tight">
+                                                                        $
+                                                                        {(
+                                                                            gift.priceInCents /
+                                                                            100
+                                                                        ).toFixed(
+                                                                            2,
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                            </ItemContent>
+                                                            <div className="flex flex-col items-end justify-center min-h-16 sm:h-20">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="default"
+                                                                    onClick={
+                                                                        handleGiftContribute
+                                                                    }
+                                                                    className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                                                                >
+                                                                    <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                        <ItemFooter className="w-full mt-2 gap-1">
+                                                            <div className="flex-1 space-y-0.5">
+                                                                <Progress
+                                                                    value={
+                                                                        fundedPercentage
+                                                                    }
+                                                                    className="h-1.5"
+                                                                />
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {fundedPercentage.toFixed(
+                                                                        0,
+                                                                    )}
+                                                                    % funded
+                                                                </p>
+                                                            </div>
+                                                        </ItemFooter>
+                                                    </Item>
+                                                );
+                                            })}
+                                        </ItemGroup>
+                                    </div>
                                 </CardContent>
                             </Card>
                         )}
-
-                        {content.mode === "gifts" &&
-                            content.items &&
-                            content.items.length > 0 && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Our Gift List</CardTitle>
-                                        <CardDescription>
-                                            You can contribute any amount to any
-                                            gift
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <ScrollArea className="h-[420px] w-full rounded-md">
-                                            <ItemGroup className="gap-3 p-1">
-                                                {content.items.map((gift) => {
-                                                    const fundedPercentage = 0; // Would come from backend
-                                                    return (
-                                                        <Item
-                                                            key={gift.id}
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="flex-col items-start"
-                                                        >
-                                                            <div className="flex w-full items-start gap-2 sm:gap-3">
-                                                                <ItemMedia
-                                                                    variant="image"
-                                                                    className="size-16 sm:size-20 shrink-0"
-                                                                >
-                                                                    {gift.imageUrl ? (
-                                                                        <Image
-                                                                            src={
-                                                                                gift.imageUrl
-                                                                            }
-                                                                            alt={
-                                                                                gift.name
-                                                                            }
-                                                                            width={
-                                                                                80
-                                                                            }
-                                                                            height={
-                                                                                80
-                                                                            }
-                                                                            className="object-cover rounded"
-                                                                        />
-                                                                    ) : (
-                                                                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                                                                            <Gift className="h-8 w-8 text-muted-foreground" />
-                                                                        </div>
-                                                                    )}
-                                                                </ItemMedia>
-                                                                <ItemContent className="flex-1 min-h-16 sm:h-20 flex flex-col justify-between">
-                                                                    <div className="space-y-0">
-                                                                        <ItemTitle className="line-clamp-1 text-xs sm:text-sm leading-tight">
-                                                                            {
-                                                                                gift.name
-                                                                            }
-                                                                        </ItemTitle>
-                                                                        {gift.description && (
-                                                                            <ItemDescription className="line-clamp-1 text-[10px] sm:text-xs leading-tight">
-                                                                                {
-                                                                                    gift.description
-                                                                                }
-                                                                            </ItemDescription>
-                                                                        )}
-                                                                        <p className="text-[10px] sm:text-xs font-semibold leading-tight">
-                                                                            $
-                                                                            {(
-                                                                                gift.priceInCents /
-                                                                                100
-                                                                            ).toFixed(
-                                                                                2,
-                                                                            )}
-                                                                        </p>
-                                                                    </div>
-                                                                </ItemContent>
-                                                                <div className="flex flex-col items-end justify-center min-h-16 sm:h-20">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="default"
-                                                                        onClick={
-                                                                            handleGiftContribute
-                                                                        }
-                                                                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                                                                    >
-                                                                        <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                            <ItemFooter className="w-full mt-2 gap-1">
-                                                                <div className="flex-1 space-y-0.5">
-                                                                    <Progress
-                                                                        value={
-                                                                            fundedPercentage
-                                                                        }
-                                                                        className="h-1.5"
-                                                                    />
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        {fundedPercentage.toFixed(
-                                                                            0,
-                                                                        )}
-                                                                        % funded
-                                                                    </p>
-                                                                </div>
-                                                            </ItemFooter>
-                                                        </Item>
-                                                    );
-                                                })}
-                                            </ItemGroup>
-                                        </ScrollArea>
-                                    </CardContent>
-                                </Card>
-                            )}
-                    </div>
                 </div>
             </div>
-        </section>
+        </div>
     );
 }
 
@@ -653,7 +551,7 @@ function RsvpSection({
 }) {
     if (!content) return null;
 
-    const [rsvpForm, setRsvpForm] = useState({
+    const [rsvpForm, setRsvpForm] = React.useState({
         name: "",
         email: "",
         attendance: "",
@@ -661,11 +559,11 @@ function RsvpSection({
         dietary: "",
     });
 
-    const [authDialogOpen, setAuthDialogOpen] = useState(false);
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [otpCode, setOtpCode] = useState("");
-    const [otpSent, setOtpSent] = useState(false);
-    const [isAuthed, setIsAuthed] = useState(false);
+    const [authDialogOpen, setAuthDialogOpen] = React.useState(false);
+    const [phoneNumber, setPhoneNumber] = React.useState("");
+    const [otpCode, setOtpCode] = React.useState("");
+    const [otpSent, setOtpSent] = React.useState(false);
+    const [isAuthed, setIsAuthed] = React.useState(false);
 
     const handleRSVPSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -713,15 +611,8 @@ function RsvpSection({
     };
 
     return (
-        <section className="relative min-h-screen py-20">
-            {/* Background panel with rounded top corners */}
-            <div
-                aria-hidden="true"
-                className="absolute inset-0 bg-background rounded-t-4xl border border-border"
-            />
-
-            {/* Content wrapper */}
-            <div className="relative z-10 container mx-auto px-4">
+        <>
+            <div className="relative container mx-auto px-4 py-20">
                 <div className="mx-auto max-w-2xl space-y-12">
                     <div className="text-center space-y-4">
                         <h2 className="font-sans text-4xl font-bold sm:text-5xl">
@@ -954,12 +845,8 @@ function RsvpSection({
                     </div>
                 </SheetContent>
             </Sheet>
-        </section>
+        </>
     );
-}
-
-function CountdownSection({ weddingDate }: { weddingDate?: string }) {
-    return <WeddingCountdown weddingDate={weddingDate} />;
 }
 
 /**
@@ -976,16 +863,33 @@ export default function ClassicTemplate({
     // Section registry - maps section keys to their render functions
     const sectionRegistry: Record<SectionKey, () => React.ReactNode> = {
         hero: () => (
-            <HeroSection
-                content={content.hero}
-                weddingName={wedding.name}
+            <SharedHeroSection
+                as="div"
                 weddingDate={wedding.date}
                 heroImageUrl={wedding.heroImageUrl}
                 venueName={wedding.venueName}
                 venueLocation={wedding.venueLocation}
-            />
+                showTopRightDash
+            >
+                <div className="text-center px-6">
+                    <div className="mx-auto max-w-4xl space-y-6 md:space-y-8">
+                        <div className="space-y-3 md:space-y-4">
+                            <h1 className="font-sans text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl text-foreground">
+                                {content.hero?.title || wedding.name}
+                            </h1>
+                            {content.hero?.subtitle && (
+                                <p className="text-base sm:text-lg text-muted-foreground">
+                                    {content.hero.subtitle}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </SharedHeroSection>
         ),
-        countdown: () => <CountdownSection weddingDate={wedding.weddingDate} />,
+        countdown: () => (
+            <WeddingCountdown as="div" weddingDate={wedding.weddingDate} />
+        ),
         itinerary: () => <ItinerarySection content={content.itinerary} />,
         photos: () => <PhotosSection content={content.photos} />,
         location: () => <LocationSection content={content.location} />,
@@ -999,34 +903,22 @@ export default function ClassicTemplate({
         ),
     };
 
-    // Render sections in the order specified by enabled array
-    const renderSection = (key: SectionKey, index: number) => {
-        const renderFn = sectionRegistry[key];
-        if (!renderFn) return null;
-
-        // Add stacking effect - each section stacks on top of previous with increasing z-index
-        // z-index starts at 10 and increases by 5 for each section, capped at 40 (navbar is z-50)
-        const zIndex = Math.min(10 + (index * 5), 40);
-
-        // Wrap each section with id and scroll-margin for navbar navigation
-        return (
-            <div 
-                key={key} 
-                id={key} 
-                className="scroll-mt-16 sticky top-16"
-                style={{ zIndex }}
-            >
-                {renderFn()}
-            </div>
-        );
-    };
-
     return (
-        <div className="min-h-screen bg-background text-foreground pb-20 md:pb-0 font-sans">
-            {enabled.map((key, index) => renderSection(key, index))}
+        <div className="bg-background text-foreground font-sans">
+            {/* Render sections in normal flow with overlapping effect */}
+            {enabled.map((key, index) => {
+                const renderFn = sectionRegistry[key];
+                if (!renderFn) return null;
+
+                return (
+                    <OverlappingSection key={key} id={key} index={index}>
+                        {renderFn()}
+                    </OverlappingSection>
+                );
+            })}
 
             {/* Footer */}
-            <footer className="border-t py-8 px-4">
+            <footer className="border-t py-8 px-4 bg-background">
                 <div className="container mx-auto text-center text-sm text-muted-foreground">
                     <p>{wedding.name}</p>
                     <p className="mt-2">

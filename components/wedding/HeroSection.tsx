@@ -24,6 +24,11 @@ interface HeroSectionProps {
      * Shows a small decorative dash at the top-right (as in the classic mock).
      */
     showTopRightDash?: boolean;
+    /**
+     * Element type to render as (section or div). Defaults to "section".
+     * Use "div" when wrapping with a motion.section in templates.
+     */
+    as?: "section" | "div";
     children?: ReactNode;
 }
 
@@ -45,10 +50,11 @@ export function HeroSection({
     className,
     frameClassName,
     showTopRightDash = false,
+    as: Component = "section",
     children,
 }: HeroSectionProps) {
     return (
-        <section
+        <Component
             className={cn(
                 "relative flex min-h-svh items-center justify-center overflow-hidden",
                 className,
@@ -58,7 +64,7 @@ export function HeroSection({
             <div
                 className={cn(
                     frameClassName ? "relative" : "absolute inset-0",
-                    "flex items-center justify-center overflow-hidden",
+                    "overflow-hidden",
                     frameClassName,
                 )}
             >
@@ -80,48 +86,51 @@ export function HeroSection({
                     <div className="absolute inset-0 z-0 bg-linear-to-b from-background to-muted/20" />
                 )}
 
-                {/* Metadata Overlays */}
-                <div className="absolute inset-0 z-10 pointer-events-none">
-                    {/* Top-left: Wedding Date */}
-                    {weddingDate && (
-                        <div className="absolute top-20 left-6 md:top-24 md:left-10">
-                            <p className="text-xs md:text-sm font-medium tracking-wide text-foreground/80">
-                                {weddingDate}
-                            </p>
+                {/* Foreground layout (flex; no absolute positioning for metadata) */}
+                <div className="relative z-10 min-h-svh flex flex-col justify-between px-6 md:px-10 pt-20 md:pt-24 pb-24 md:pb-32">
+                    {/* Top row: Wedding Date + Decorative dash */}
+                    <div className="pointer-events-none flex items-start justify-between gap-6">
+                        <div className="min-w-0">
+                            {weddingDate && (
+                                <p className="text-xs md:text-sm font-medium tracking-wide text-foreground/80">
+                                    {weddingDate}
+                                </p>
+                            )}
+                        </div>
+
+                        {showTopRightDash && (
+                            <div className="shrink-0">
+                                <div className="mt-2 h-px w-10 bg-foreground/60" />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Center Content (template-specific: title/subtitle/etc) */}
+                    <div className="pointer-events-auto flex-1 flex items-center justify-center">
+                        <div className="w-full">{children}</div>
+                    </div>
+
+                    {/* Bottom row: Venue Name + Venue Location */}
+                    {(venueName || venueLocation) && (
+                        <div className="pointer-events-none flex items-end justify-between gap-6">
+                            <div className="min-w-0">
+                                {venueName && (
+                                    <p className="text-xs md:text-sm font-medium text-foreground/80">
+                                        {venueName}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="min-w-0 text-right">
+                                {venueLocation && (
+                                    <p className="text-xs md:text-sm font-medium text-foreground/80">
+                                        {venueLocation}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     )}
-
-                    {/* Top-right: Decorative dash */}
-                    {showTopRightDash && (
-                        <div className="absolute top-20 right-6 md:top-24 md:right-10">
-                            <div className="h-px w-10 bg-foreground/60" />
-                        </div>
-                    )}
-
-                    {/* Bottom-left: Venue Name */}
-                    {venueName && (
-                        <div className="absolute bottom-24 left-6 md:bottom-32 md:left-10">
-                            <p className="text-xs md:text-sm font-medium text-foreground/80">
-                                {venueName}
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Bottom-right: Venue Location */}
-                    {venueLocation && (
-                        <div className="absolute bottom-24 right-6 md:bottom-32 md:right-10">
-                            <p className="text-xs md:text-sm font-medium text-foreground/80">
-                                {venueLocation}
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Center Content (template-specific: title/subtitle/etc) */}
-                <div className="relative z-20 pointer-events-auto">
-                    {children}
                 </div>
             </div>
-        </section>
+        </Component>
     );
 }

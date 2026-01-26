@@ -11,6 +11,11 @@ interface TimeRemaining {
 
 interface WeddingCountdownProps {
   weddingDate?: string; // yyyy-MM-dd format
+  /**
+   * Element type to render as (section or div). Defaults to "section".
+   * Use "div" when wrapping with a motion.section in templates.
+   */
+  as?: "section" | "div";
 }
 
 /**
@@ -18,7 +23,7 @@ interface WeddingCountdownProps {
  * Updates every second, uses viewer's local timezone.
  * Fails silently on invalid/missing dates.
  */
-export function WeddingCountdown({ weddingDate }: WeddingCountdownProps) {
+export function WeddingCountdown({ weddingDate, as: Component = "section" }: WeddingCountdownProps) {
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining | null>(null);
   const [isToday, setIsToday] = useState(false);
 
@@ -73,20 +78,13 @@ export function WeddingCountdown({ weddingDate }: WeddingCountdownProps) {
   // Don't render if no valid countdown or past date
   if (isToday) {
     return (
-      <section className="relative min-h-screen py-20">
-        {/* Background panel with rounded top corners */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-background rounded-t-4xl border border-border"
-        />
-
-        {/* Content wrapper */}
-        <div className="relative z-10 container mx-auto px-4 flex items-center justify-center min-h-screen">
+      <Component className="relative py-20">
+        <div className="relative container mx-auto px-4 flex items-center justify-center">
           <h2 className="font-sans text-5xl font-bold sm:text-6xl md:text-7xl text-center">
             Today&apos;s the Day!
           </h2>
         </div>
-      </section>
+      </Component>
     );
   }
 
@@ -95,15 +93,8 @@ export function WeddingCountdown({ weddingDate }: WeddingCountdownProps) {
   }
 
   return (
-    <section className="relative min-h-screen py-20">
-      {/* Background panel with rounded top corners */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-background rounded-t-4xl border border-border"
-      />
-
-      {/* Content wrapper */}
-      <div className="relative z-10 container mx-auto px-4">
+    <Component className="relative py-20">
+      <div className="relative container mx-auto px-4">
         <div className="mx-auto max-w-5xl space-y-12">
           <div className="text-center space-y-4">
             <h2 className="font-sans text-4xl font-bold sm:text-5xl">
@@ -151,6 +142,6 @@ export function WeddingCountdown({ weddingDate }: WeddingCountdownProps) {
           </div>
         </div>
       </div>
-    </section>
+    </Component>
   );
 }
