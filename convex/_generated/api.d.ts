@@ -10,12 +10,16 @@
 
 import type * as auth from "../auth.js";
 import type * as authz from "../authz.js";
+import type * as gifts from "../gifts.js";
 import type * as guests from "../guests.js";
 import type * as http from "../http.js";
 import type * as media from "../media.js";
+import type * as mediaLibrary from "../mediaLibrary.js";
 import type * as memberships from "../memberships.js";
+import type * as rsvp from "../rsvp.js";
 import type * as users from "../users.js";
 import type * as weddings from "../weddings.js";
+import type * as whatsapp from "../whatsapp.js";
 
 import type {
   ApiFromModules,
@@ -26,12 +30,16 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authz: typeof authz;
+  gifts: typeof gifts;
   guests: typeof guests;
   http: typeof http;
   media: typeof media;
+  mediaLibrary: typeof mediaLibrary;
   memberships: typeof memberships;
+  rsvp: typeof rsvp;
   users: typeof users;
   weddings: typeof weddings;
+  whatsapp: typeof whatsapp;
 }>;
 
 /**

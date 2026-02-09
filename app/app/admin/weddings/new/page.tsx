@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Popover,
   PopoverContent,
@@ -30,7 +31,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { templateRegistry } from "@/templates/registry";
+import { getDesignList } from "@/designs/registry";
 import { CalendarIcon, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -43,14 +44,18 @@ export default function NewWeddingPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [weddingDate, setWeddingDate] = useState<Date>();
-  const [templateId, setTemplateId] = useState("classic");
-  const [templateVersion, setTemplateVersion] = useState("v1");
+  const [designId, setDesignId] = useState("basic");
+  const [featureFlags, setFeatureFlags] = useState({
+    rsvp: false,
+    gifts: false,
+    whatsapp: false,
+  });
   const [coupleEmails, setCoupleEmails] = useState<string[]>([]);
   const [emailInput, setEmailInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const templates = Object.values(templateRegistry);
-  const selectedTemplate = templateRegistry[templateId];
+  const designs = getDesignList();
+  const selectedDesign = designs.find((design) => design.id === designId);
 
   const handleAddEmail = () => {
     const trimmed = emailInput.trim();
@@ -82,8 +87,8 @@ export default function NewWeddingPage() {
         name,
         slug,
         weddingDate: formattedDate,
-        templateId,
-        templateVersion,
+        designId,
+        features: featureFlags,
         coupleEmails: coupleEmails.length > 0 ? coupleEmails : undefined,
       });
 
@@ -124,8 +129,7 @@ export default function NewWeddingPage() {
           <CardHeader>
             <CardTitle>Create New Wedding</CardTitle>
             <CardDescription>
-              Set up a new wedding website. All sections will be enabled by
-              default.
+              Set up a new wedding website with a custom design implementation.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -197,49 +201,84 @@ export default function NewWeddingPage() {
                 </p>
               </div>
 
-              {/* Template Selection */}
+              {/* Design Selection */}
               <div className="space-y-2">
-                <Label htmlFor="template">Template *</Label>
-                <Select value={templateId} onValueChange={setTemplateId}>
-                  <SelectTrigger id="template">
+                <Label htmlFor="design">Design Implementation *</Label>
+                <Select value={designId} onValueChange={setDesignId}>
+                  <SelectTrigger id="design">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {templates.map((template) => (
-                      <SelectItem key={template.metadata.id} value={template.metadata.id}>
-                        {template.metadata.name}
+                    {designs.map((design) => (
+                      <SelectItem key={design.id} value={design.id}>
+                        {design.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {selectedTemplate && (
+                {selectedDesign && (
                   <p className="text-xs text-muted-foreground">
-                    {selectedTemplate.metadata.description}
+                    {selectedDesign.description}
                   </p>
                 )}
               </div>
 
-              {/* Template Version */}
+              {/* Feature Flags */}
               <div className="space-y-2">
-                <Label htmlFor="version">Template Version *</Label>
-                <Select
-                  value={templateVersion}
-                  onValueChange={setTemplateVersion}
-                >
-                  <SelectTrigger id="version">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectedTemplate?.metadata.versions.map((version) => (
-                      <SelectItem key={version} value={version}>
-                        {version}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Template version is immutable once the wedding goes live
-                </p>
+                <Label>Feature Flags</Label>
+                <div className="space-y-3 rounded-lg border p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">RSVP</p>
+                      <p className="text-xs text-muted-foreground">
+                        Enable the RSVP flow for this wedding
+                      </p>
+                    </div>
+                    <Switch
+                      checked={featureFlags.rsvp}
+                      onCheckedChange={(checked) =>
+                        setFeatureFlags((prev) => ({
+                          ...prev,
+                          rsvp: checked,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Gifts</p>
+                      <p className="text-xs text-muted-foreground">
+                        Enable the Stripe gift section
+                      </p>
+                    </div>
+                    <Switch
+                      checked={featureFlags.gifts}
+                      onCheckedChange={(checked) =>
+                        setFeatureFlags((prev) => ({
+                          ...prev,
+                          gifts: checked,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">WhatsApp</p>
+                      <p className="text-xs text-muted-foreground">
+                        Enable guest messaging entry points
+                      </p>
+                    </div>
+                    <Switch
+                      checked={featureFlags.whatsapp}
+                      onCheckedChange={(checked) =>
+                        setFeatureFlags((prev) => ({
+                          ...prev,
+                          whatsapp: checked,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Couple Emails */}
