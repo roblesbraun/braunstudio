@@ -1,4 +1,5 @@
 import { Id } from "@/convex/_generated/dataModel";
+import { ComponentType } from "react";
 
 export interface WeddingDesignData {
   _id: Id<"weddings">;
@@ -62,7 +63,7 @@ export interface WeddingDesignProps {
   isPreview?: boolean;
 }
 
-export type WeddingDesignComponent = React.ComponentType<WeddingDesignProps>;
+export type WeddingDesignComponent = ComponentType<WeddingDesignProps>;
 
 export interface DesignMetadata {
   id: string;
