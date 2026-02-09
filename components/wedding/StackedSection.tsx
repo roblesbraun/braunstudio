@@ -6,7 +6,7 @@ import {
     useScroll,
     useMotionValue,
     useMotionValueEvent,
-} from "framer-motion";
+} from "motion/react";
 import { cn } from "@/lib/utils";
 
 interface StackedSectionProps {

@@ -114,52 +114,61 @@ export default function CoupleDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Guests
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {guestStats ? (
-                <div className="text-2xl font-bold">{guestStats.total}</div>
-              ) : (
-                <Skeleton className="h-8 w-16" />
-              )}
-            </CardContent>
-          </Card>
+        {/* Stats Grid — only when RSVP is enabled */}
+        {wedding.features.rsvp ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Total Guests
+                </CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                {guestStats ? (
+                  <div className="text-2xl font-bold">{guestStats.total}</div>
+                ) : (
+                  <Skeleton className="h-8 w-16" />
+                )}
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
-              <Users className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              {guestStats ? (
-                <div className="text-2xl font-bold">{guestStats.confirmed}</div>
-              ) : (
-                <Skeleton className="h-8 w-16" />
-              )}
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
+                <Users className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                {guestStats ? (
+                  <div className="text-2xl font-bold">{guestStats.confirmed}</div>
+                ) : (
+                  <Skeleton className="h-8 w-16" />
+                )}
+              </CardContent>
+            </Card>
 
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                <Users className="h-4 w-4 text-amber-500" />
+              </CardHeader>
+              <CardContent>
+                {guestStats ? (
+                  <div className="text-2xl font-bold">{guestStats.pending}</div>
+                ) : (
+                  <Skeleton className="h-8 w-16" />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <Users className="h-4 w-4 text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              {guestStats ? (
-                <div className="text-2xl font-bold">{guestStats.pending}</div>
-              ) : (
-                <Skeleton className="h-8 w-16" />
-              )}
+            <CardContent className="flex items-center gap-2 py-6 text-muted-foreground">
+              <Users className="h-5 w-5 shrink-0" />
+              <span>RSVP not enabled for this wedding.</span>
             </CardContent>
           </Card>
-        </div>
+        )}
 
         {/* Stripe Connect Status */}
         <Card>

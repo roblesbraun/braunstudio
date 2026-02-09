@@ -63,8 +63,11 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
   useEffect(() => {
     if (!wedding) return;
 
+    let cancelled = false;
+
     async function loadDesign() {
       const design = await getDesign(wedding.designId);
+      if (cancelled) return;
       if (design) {
         setDesignComponent(() => design);
         setDesignError(null);
@@ -75,6 +78,10 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
     }
 
     loadDesign();
+
+    return () => {
+      cancelled = true;
+    };
   }, [wedding?.designId]);
 
   // Loading state
