@@ -26,7 +26,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CalendarIcon, Loader2, X, Upload, Trash2 } from "lucide-react";
@@ -41,7 +40,6 @@ type WeddingWithUrls = Doc<"weddings"> & {
 
 export function DetailsTab({ wedding }: { wedding: WeddingWithUrls }) {
   const updateWedding = useMutation(api.weddings.update);
-  const updateStatus = useMutation(api.weddings.updateStatus);
   const removeWedding = useMutation(api.weddings.remove);
   const clearNavbarLogos = useMutation(api.weddings.clearNavbarLogos);
   const setHeroImage = useMutation(api.weddings.setHeroImage);
@@ -61,7 +59,6 @@ export function DetailsTab({ wedding }: { wedding: WeddingWithUrls }) {
   const [coupleEmails, setCoupleEmails] = useState(wedding.coupleEmails);
   const [emailInput, setEmailInput] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isChangingStatus, setIsChangingStatus] = useState(false);
   const [isUploadingLightLogo, setIsUploadingLightLogo] = useState(false);
   const [isUploadingDarkLogo, setIsUploadingDarkLogo] = useState(false);
   const [isRemovingLightLogo, setIsRemovingLightLogo] = useState(false);
@@ -108,24 +105,6 @@ export function DetailsTab({ wedding }: { wedding: WeddingWithUrls }) {
     }
   };
 
-  const handleStatusChange = async (
-    newStatus: "draft" | "pending_payment" | "live"
-  ) => {
-    setIsChangingStatus(true);
-    try {
-      await updateStatus({
-        id: wedding._id,
-        status: newStatus,
-      });
-      toast.success(`Wedding status changed to ${newStatus}`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to change status"
-      );
-    } finally {
-      setIsChangingStatus(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (
@@ -370,7 +349,7 @@ export function DetailsTab({ wedding }: { wedding: WeddingWithUrls }) {
             <Label htmlFor="slug">Slug</Label>
             <Input id="slug" value={wedding.slug} disabled />
             <p className="text-xs text-muted-foreground">
-              {wedding.status === "live"
+              {wedding.deployment.state === "live"
                 ? "Slug cannot be changed once wedding is live"
                 : "Slug is set at creation and cannot be changed"}
             </p>
@@ -717,84 +696,12 @@ export function DetailsTab({ wedding }: { wedding: WeddingWithUrls }) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Status Management</CardTitle>
-          <CardDescription>
-            Control the wedding&apos;s lifecycle status
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium">Current Status:</span>
-            <Badge
-              className={
-                wedding.status === "live"
-                  ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                  : wedding.status === "draft"
-                    ? ""
-                    : "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
-              }
-            >
-              {wedding.status}
-            </Badge>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Change Status</Label>
-            <div className="flex gap-2">
-              {wedding.status !== "draft" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleStatusChange("draft")}
-                  disabled={
-                    isChangingStatus ||
-                    wedding.status === "live"
-                  }
-                >
-                  Set to Draft
-                </Button>
-              )}
-              {wedding.status !== "pending_payment" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleStatusChange("pending_payment")}
-                  disabled={
-                    isChangingStatus ||
-                    wedding.status === "live"
-                  }
-                >
-                  Set to Pending Payment
-                </Button>
-              )}
-              {wedding.status !== "live" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleStatusChange("live")}
-                  disabled={isChangingStatus}
-                >
-                  Publish Live
-                </Button>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {wedding.status === "live"
-                ? "Live weddings cannot be reverted to draft or pending"
-                : "Status transitions follow: draft ? pending_payment ? live"}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {wedding.status === "draft" && (
+      {wedding.deployment.state !== "live" && (
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
             <CardDescription>
-              Permanently delete this wedding (only available for drafts)
+              Permanently delete this wedding (draft/preview only)
             </CardDescription>
           </CardHeader>
           <CardContent>

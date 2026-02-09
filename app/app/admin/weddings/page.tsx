@@ -45,7 +45,8 @@ export default function WeddingsListPage() {
 
       // Status filter
       const matchesStatus =
-        statusFilter === "all" || wedding.status === statusFilter;
+        statusFilter === "all" ||
+        wedding.deployment.state === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
@@ -59,16 +60,14 @@ export default function WeddingsListPage() {
             Live
           </Badge>
         );
-      case "draft":
-        return (
-          <Badge variant="secondary">Draft</Badge>
-        );
-      case "pending_payment":
+      case "preview":
         return (
           <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
-            Pending Payment
+            Preview
           </Badge>
         );
+      case "draft":
+        return <Badge variant="secondary">Draft</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -129,20 +128,18 @@ export default function WeddingsListPage() {
                   Live
                 </Button>
                 <Button
+                  variant={statusFilter === "preview" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("preview")}
+                >
+                  Preview
+                </Button>
+                <Button
                   variant={statusFilter === "draft" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter("draft")}
                 >
                   Draft
-                </Button>
-                <Button
-                  variant={
-                    statusFilter === "pending_payment" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setStatusFilter("pending_payment")}
-                >
-                  Pending
                 </Button>
               </div>
             </div>
@@ -168,7 +165,7 @@ export default function WeddingsListPage() {
                       <TableHead>Name</TableHead>
                       <TableHead>Slug</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Template</TableHead>
+                      <TableHead>Design</TableHead>
                       <TableHead>Stripe</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -184,9 +181,11 @@ export default function WeddingsListPage() {
                             {wedding.slug}
                           </code>
                         </TableCell>
-                        <TableCell>{getStatusBadge(wedding.status)}</TableCell>
+                        <TableCell>
+                          {getStatusBadge(wedding.deployment.state)}
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {wedding.templateId}@{wedding.templateVersion}
+                          {wedding.designId}
                         </TableCell>
                         <TableCell>
                           {wedding.stripe.connected ? (
@@ -212,7 +211,7 @@ export default function WeddingsListPage() {
                                 <Eye className="h-4 w-4" />
                               </Link>
                             </Button>
-                            {wedding.status === "live" && (
+                            {wedding.deployment.state === "live" && (
                               <Button
                                 variant="ghost"
                                 size="sm"

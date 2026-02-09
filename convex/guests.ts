@@ -1,7 +1,17 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { auth } from "./auth";
-import { assertWeddingAccess, assertAuthenticated } from "./authz";
+import { assertWeddingAccess } from "./authz";
+
+async function ensureWeddingRsvpEnabled(ctx: any, weddingId: string) {
+  const wedding = await ctx.db.get(weddingId);
+  if (!wedding) {
+    throw new Error("Wedding not found");
+  }
+  if (!wedding.features?.rsvp) {
+    throw new Error("RSVP is disabled for this wedding");
+  }
+  return wedding;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // QUERIES
@@ -47,6 +57,7 @@ export const getStats = query({
   args: { weddingId: v.id("weddings") },
   handler: async (ctx, args) => {
     await assertWeddingAccess(ctx, args.weddingId);
+    await ensureWeddingRsvpEnabled(ctx, args.weddingId);
 
     const guests = await ctx.db
       .query("guests")
@@ -221,6 +232,7 @@ export const updateRsvp = mutation({
       throw new Error("Guest not found");
     }
 
+    await ensureWeddingRsvpEnabled(ctx, guest.weddingId);
     await ctx.db.patch(args.id, { rsvpStatus: args.rsvpStatus });
     return args.id;
   },

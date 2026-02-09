@@ -18,7 +18,7 @@ export default function CoupleDashboardPage() {
 
   const guestStats = useQuery(
     api.guests.getStats,
-    wedding ? { weddingId: wedding._id } : "skip"
+    wedding && wedding.features.rsvp ? { weddingId: wedding._id } : "skip"
   );
 
   if (weddings === undefined) {
@@ -75,14 +75,14 @@ export default function CoupleDashboardPage() {
               <span>{wedding.name}</span>
               <span
                 className={`rounded-full px-2 py-1 text-xs font-medium ${
-                  wedding.status === "live"
+                  wedding.deployment.state === "live"
                     ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                    : wedding.status === "draft"
-                      ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                      : "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+                    : wedding.deployment.state === "preview"
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+                      : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
                 }`}
               >
-                {wedding.status}
+                {wedding.deployment.state}
               </span>
             </CardTitle>
           </CardHeader>
@@ -98,7 +98,7 @@ export default function CoupleDashboardPage() {
                   Preview
                 </a>
               </Button>
-              {wedding.status === "live" && (
+              {wedding.deployment.state === "live" && (
                 <Button variant="outline" asChild>
                   <a
                     href={`https://${wedding.slug}.braunstud.io`}

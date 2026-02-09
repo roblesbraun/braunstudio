@@ -74,9 +74,9 @@ export function LinksTab({ wedding }: { wedding: Doc<"weddings"> }) {
         <CardHeader>
           <CardTitle>Live URL</CardTitle>
           <CardDescription>
-            {wedding.status === "live"
+            {wedding.deployment.state === "live"
               ? "This is the public URL for the wedding website"
-              : "This URL will be active once the wedding status is set to 'live'"}
+              : "This URL will be active once the wedding is deployed live"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -95,7 +95,7 @@ export function LinksTab({ wedding }: { wedding: Doc<"weddings"> }) {
                   <Copy className="h-4 w-4" />
                 )}
               </Button>
-              {wedding.status === "live" && (
+              {wedding.deployment.state === "live" && (
                 <Button variant="outline" size="icon" asChild>
                   <a href={liveUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" />

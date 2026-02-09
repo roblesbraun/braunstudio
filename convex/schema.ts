@@ -2,40 +2,52 @@ import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
-// Wedding status enum values
-const weddingStatus = v.union(
+// Deployment state enum values
+const deploymentState = v.union(
   v.literal("draft"),
-  v.literal("pending_payment"),
+  v.literal("preview"),
   v.literal("live")
 );
 
-// Stripe gift mode enum
-const stripeGiftMode = v.union(v.literal("wishlist"), v.literal("gifts"));
+// Media type enum values
+const mediaType = v.union(
+  v.literal("image"),
+  v.literal("video"),
+  v.literal("audio")
+);
 
-// Theme color values (shadcn CSS variable overrides)
-const themeColors = v.object({
-  background: v.optional(v.string()),
-  foreground: v.optional(v.string()),
-  card: v.optional(v.string()),
-  cardForeground: v.optional(v.string()),
-  popover: v.optional(v.string()),
-  popoverForeground: v.optional(v.string()),
-  primary: v.optional(v.string()),
-  primaryForeground: v.optional(v.string()),
-  secondary: v.optional(v.string()),
-  secondaryForeground: v.optional(v.string()),
-  muted: v.optional(v.string()),
-  mutedForeground: v.optional(v.string()),
-  accent: v.optional(v.string()),
-  accentForeground: v.optional(v.string()),
-  destructive: v.optional(v.string()),
-  border: v.optional(v.string()),
-  input: v.optional(v.string()),
-  ring: v.optional(v.string()),
+// Per-wedding feature flags
+const featureFlags = v.object({
+  rsvp: v.boolean(),
+  gifts: v.boolean(),
+  whatsapp: v.boolean(),
 });
 
-// Section content is a flexible object per section type
-const sectionContent = v.record(v.string(), v.any());
+// Media metadata
+const mediaMetadata = v.object({
+  alt: v.optional(v.string()),
+  caption: v.optional(v.string()),
+  durationSeconds: v.optional(v.number()),
+});
+
+// RSVP config structures (multiple-choice only)
+const rsvpOption = v.object({
+  id: v.string(),
+  order: v.number(),
+  label: v.string(),
+});
+
+const rsvpQuestion = v.object({
+  id: v.string(),
+  order: v.number(),
+  prompt: v.string(),
+  options: v.array(rsvpOption),
+});
+
+const rsvpAnswer = v.object({
+  questionId: v.string(),
+  optionId: v.string(),
+});
 
 // Platform user role
 const platformRole = v.union(
@@ -66,25 +78,22 @@ const schema = defineSchema({
   weddings: defineTable({
     name: v.string(),
     slug: v.string(), // unique, immutable after live
-    status: weddingStatus,
 
-    // Template binding
-    templateId: v.string(),
-    templateVersion: v.string(),
+    // Design implementation
+    designId: v.string(),
 
-    // Sections
-    enabledSections: v.array(v.string()), // e.g. ["hero", "itinerary", "photos", ...]
-    sectionContent: sectionContent, // { hero: {...}, itinerary: {...}, ... }
+    // Feature flags
+    features: featureFlags,
 
-    // Theme (per-wedding overrides)
-    theme: v.object({
-      light: themeColors,
-      dark: themeColors,
+    // Deployment tracking (state only)
+    deployment: v.object({
+      state: deploymentState,
+      deployedAt: v.optional(v.number()),
+      deployedBy: v.optional(v.id("users")),
     }),
 
     // Stripe
     stripe: v.object({
-      mode: stripeGiftMode,
       connectAccountId: v.optional(v.string()),
       connected: v.boolean(),
     }),
@@ -99,7 +108,7 @@ const schema = defineSchema({
     // Couple emails for pre-assign access (before they log in)
     coupleEmails: v.array(v.string()),
 
-    // Navbar logos (optional per-wedding branding, theme-specific)
+    // Navbar logos (optional per-wedding branding)
     navbarLogoLightStorageId: v.optional(v.string()),
     navbarLogoDarkStorageId: v.optional(v.string()),
 
@@ -115,8 +124,53 @@ const schema = defineSchema({
 
     createdAt: v.number(),
   })
-    .index("by_slug", ["slug"])
-    .index("by_status", ["status"]),
+    .index("by_slug", ["slug"]),
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // MEDIA LIBRARY
+  // ─────────────────────────────────────────────────────────────────────────
+  mediaItems: defineTable({
+    weddingId: v.id("weddings"),
+    storageId: v.string(),
+    mediaType: mediaType,
+    order: v.number(),
+    tags: v.array(v.string()),
+    metadata: mediaMetadata,
+    createdAt: v.number(),
+  })
+    .index("by_wedding", ["weddingId"])
+    .index("by_wedding_order", ["weddingId", "order"]),
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // RSVP CONFIGS & SUBMISSIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  rsvpConfigs: defineTable({
+    weddingId: v.id("weddings"),
+    questions: v.array(rsvpQuestion),
+    updatedAt: v.number(),
+  }).index("by_wedding", ["weddingId"]),
+
+  rsvpSubmissions: defineTable({
+    weddingId: v.id("weddings"),
+    guestId: v.id("guests"),
+    answers: v.array(rsvpAnswer),
+    createdAt: v.number(),
+  })
+    .index("by_wedding", ["weddingId"])
+    .index("by_wedding_guest", ["weddingId", "guestId"]),
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GIFT OPTIONS
+  // ─────────────────────────────────────────────────────────────────────────
+  giftOptions: defineTable({
+    weddingId: v.id("weddings"),
+    label: v.string(),
+    amountCents: v.number(),
+    order: v.number(),
+    active: v.boolean(),
+  })
+    .index("by_wedding", ["weddingId"])
+    .index("by_wedding_order", ["weddingId", "order"]),
 
   // ─────────────────────────────────────────────────────────────────────────
   // WEDDING MEMBERS (post-login linking)
@@ -170,6 +224,7 @@ const schema = defineSchema({
   giftPayments: defineTable({
     weddingId: v.id("weddings"),
     guestId: v.id("guests"),
+    giftOptionId: v.optional(v.id("giftOptions")),
     amountCents: v.number(),
     stripePaymentIntentId: v.string(),
     status: v.union(

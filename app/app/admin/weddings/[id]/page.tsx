@@ -10,9 +10,12 @@ import { AdminSidebar } from "@/components/dashboard/AdminSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DetailsTab } from "@/components/admin/wedding-editor/DetailsTab";
-import { TemplateTab } from "@/components/admin/wedding-editor/TemplateTab";
-import { SectionsTab } from "@/components/admin/wedding-editor/SectionsTab";
-import { ThemeTab } from "@/components/admin/wedding-editor/ThemeTab";
+import { DesignTab } from "@/components/admin/wedding-editor/DesignTab";
+import { FeaturesTab } from "@/components/admin/wedding-editor/FeaturesTab";
+import { RsvpTab } from "@/components/admin/wedding-editor/RsvpTab";
+import { GiftsTab } from "@/components/admin/wedding-editor/GiftsTab";
+import { MediaTab } from "@/components/admin/wedding-editor/MediaTab";
+import { DeployTab } from "@/components/admin/wedding-editor/DeployTab";
 import { GuestsTab } from "@/components/admin/wedding-editor/GuestsTab";
 import { LinksTab } from "@/components/admin/wedding-editor/LinksTab";
 
@@ -72,11 +75,14 @@ export default function WeddingEditorPage({
 
       <div className="flex flex-1 flex-col gap-4 p-4">
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="template">Template</TabsTrigger>
-            <TabsTrigger value="sections">Sections</TabsTrigger>
-            <TabsTrigger value="theme">Theme</TabsTrigger>
+            <TabsTrigger value="design">Design</TabsTrigger>
+            <TabsTrigger value="features">Features</TabsTrigger>
+            <TabsTrigger value="rsvp">RSVP</TabsTrigger>
+            <TabsTrigger value="gifts">Gifts</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="deploy">Deploy</TabsTrigger>
             <TabsTrigger value="guests">Guests</TabsTrigger>
             <TabsTrigger value="links">Links</TabsTrigger>
           </TabsList>
@@ -85,16 +91,28 @@ export default function WeddingEditorPage({
             <DetailsTab wedding={wedding} />
           </TabsContent>
 
-          <TabsContent value="template">
-            <TemplateTab wedding={wedding} />
+          <TabsContent value="design">
+            <DesignTab wedding={wedding} />
           </TabsContent>
 
-          <TabsContent value="sections">
-            <SectionsTab wedding={wedding} />
+          <TabsContent value="features">
+            <FeaturesTab wedding={wedding} />
           </TabsContent>
 
-          <TabsContent value="theme">
-            <ThemeTab wedding={wedding} />
+          <TabsContent value="rsvp">
+            <RsvpTab weddingId={weddingId} />
+          </TabsContent>
+
+          <TabsContent value="gifts">
+            <GiftsTab weddingId={weddingId} />
+          </TabsContent>
+
+          <TabsContent value="media">
+            <MediaTab weddingId={weddingId} />
+          </TabsContent>
+
+          <TabsContent value="deploy">
+            <DeployTab wedding={wedding} />
           </TabsContent>
 
           <TabsContent value="guests">

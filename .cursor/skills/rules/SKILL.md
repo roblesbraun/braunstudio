@@ -121,54 +121,64 @@ Authorization checks must exist in Convex, not only in UI.
 - Slug must be unique
 - Slug is immutable once wedding is live
 
-Wedding lifecycle:
+Wedding deployment state:
 
 - `draft`
-- `pending_payment`
+- `preview`
 - `live`
+
+Each wedding stores a `designId` that points to a custom design implementation.
 
 ---
 
-## Template System Rules (Critical)
+## Design System Rules (Critical)
 
-- Templates are React components in code
-- No CMS layouts
-- No HTML injection
-- No per-wedding React code
-- No dynamic layout editing
-- Templates define layout only
-- Content always comes from data
+- Each wedding uses a **custom design implementation** (code)
+- There is **no template system**
+- There are **no sections or layout builders**
+- Admins select a design implementation (`designId`) in the dashboard
+- Designs are presentational: they render data and shared feature UIs only
+- No business logic or storage logic in designs
 
 Folder structure:
 
 ```
-/templates/{templateId}/{version}/Template.tsx
+/designs/{designId}/Design.tsx
 ```
-
-- Template versions are immutable once released
-- Weddings reference:
-    - `templateId`
-    - `templateVersion`
-
-- Existing weddings stay pinned to their version
 
 ---
 
-## Mandatory Template Sections
+## Feature Flags (Mandatory)
 
-Every template MUST support these sections (conditionally rendered):
+- Per wedding feature flags:
+  - `rsvp`
+  - `gifts`
+  - `whatsapp`
+- Disabled features:
+  - must not execute backend logic
+  - must not render any UI
 
-- Hero CTA
-- Itinerary
-- Photos
-- Location
-- Lodging
-- Dress Code
-- Gifts
-- RSVP
+---
 
-Templates define order and layout.
-Admins control content and enable/disable sections.
+## RSVP Rules (Strict)
+
+- Multiple-choice questions only
+- No free-text inputs
+- No conditional questions or branching
+- RSVP configuration is managed in the admin dashboard
+- RSVP structure is stored in Convex and reused by all designs
+- Designs only render the RSVP form; they do not define structure or logic
+
+---
+
+## Media Library Rules (Critical)
+
+- Media belongs to the wedding, not the design
+- Single flat media library per wedding
+- Supported types: images, videos, audio
+- Each item supports ordering, tags, and metadata (alt/captions/duration)
+- Tags are semantic (not layout/section concepts)
+- Designs query media by tags and respect stored order
 
 ---
 
@@ -191,7 +201,7 @@ Admins control content and enable/disable sections.
 
 - Wedding pages:
     - Theme toggle
-    - Theme configurable per wedding
+    - No per-wedding theme overrides in backend data
 
 - Respect system theme where applicable
 
@@ -230,6 +240,7 @@ Gift Payments:
 - Uses same renderer as production
 - RSVP disabled
 - Payments disabled
+- WhatsApp disabled
 - No indexing
 - Visual preview indicator
 
@@ -248,10 +259,13 @@ Gift Payments:
 
 Do NOT implement:
 
+- Template systems or theme registries
+- Section-based layouts or layout builders
 - Drag-and-drop builders
-- CMS-driven layouts
+- CMS integrations or rich-text editors
+- Runtime layout composition
+- Free-form RSVP answers
 - Public signups
-- Per-wedding React code
 - Couples editing page content
 - Self-service platform payments
 

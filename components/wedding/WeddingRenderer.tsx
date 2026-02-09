@@ -2,18 +2,11 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { getTemplate } from "@/templates/registry";
-import {
-  WeddingTemplateProps,
-  SectionContentMap,
-  SectionKey,
-  WeddingTheme,
-} from "@/templates/types";
-import { WeddingThemeWrapper } from "./WeddingThemeWrapper";
+import { getDesign } from "@/designs/registry";
+import { WeddingDesignProps } from "@/designs/types";
 import { PreviewBanner } from "./PreviewBanner";
-import { WeddingNavbar } from "./WeddingNavbar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface WeddingRendererProps {
   slug: string;
@@ -32,30 +25,57 @@ interface WeddingRendererProps {
  */
 export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProps) {
   const wedding = useQuery(api.weddings.getBySlug, { slug });
-  const [TemplateComponent, setTemplateComponent] =
-    useState<React.ComponentType<WeddingTemplateProps> | null>(null);
-  const [templateError, setTemplateError] = useState<string | null>(null);
+  const [DesignComponent, setDesignComponent] =
+    useState<React.ComponentType<WeddingDesignProps> | null>(null);
+  const [designError, setDesignError] = useState<string | null>(null);
 
-  // Load template when wedding data is available
+  const effectiveFeatures = useMemo(() => {
+    if (!wedding) return null;
+    if (isPreview) {
+      return {
+        rsvp: false,
+        gifts: false,
+        whatsapp: false,
+      };
+    }
+    return wedding.features;
+  }, [wedding, isPreview]);
+
+  const mediaItems = useQuery(
+    api.mediaLibrary.listPublicByWedding,
+    wedding ? { weddingId: wedding._id } : "skip"
+  );
+
+  const rsvpConfig = useQuery(
+    api.rsvp.getPublicConfig,
+    wedding && effectiveFeatures?.rsvp
+      ? { weddingId: wedding._id }
+      : "skip"
+  );
+
+  const giftOptions = useQuery(
+    api.gifts.listPublicOptions,
+    wedding && effectiveFeatures?.gifts
+      ? { weddingId: wedding._id }
+      : "skip"
+  );
+
   useEffect(() => {
     if (!wedding) return;
 
-    async function loadTemplate() {
-      const template = await getTemplate(
-        wedding!.templateId,
-        wedding!.templateVersion
-      );
-      if (template) {
-        setTemplateComponent(() => template);
+    async function loadDesign() {
+      const design = await getDesign(wedding.designId);
+      if (design) {
+        setDesignComponent(() => design);
+        setDesignError(null);
       } else {
-        setTemplateError(
-          `Template not found: ${wedding!.templateId}@${wedding!.templateVersion}`
-        );
+        setDesignComponent(null);
+        setDesignError(`Design not found: ${wedding.designId}`);
       }
     }
 
-    loadTemplate();
-  }, [wedding?.templateId, wedding?.templateVersion]);
+    loadDesign();
+  }, [wedding?.designId]);
 
   // Loading state
   if (wedding === undefined) {
@@ -80,8 +100,8 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
     );
   }
 
-  // Check if wedding is accessible (not draft in production)
-  if (!isPreview && wedding.status === "draft") {
+  // Check if wedding is accessible (not live in production)
+  if (!isPreview && wedding.deployment.state !== "live") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-8 text-center">
         <h1 className="text-2xl font-semibold">Coming Soon</h1>
@@ -92,19 +112,18 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
     );
   }
 
-  // Template loading/error
-  if (templateError) {
+  if (designError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-8 text-center">
         <h1 className="text-2xl font-semibold text-destructive">
-          Template Error
+          Design Error
         </h1>
-        <p className="mt-2 text-muted-foreground">{templateError}</p>
+        <p className="mt-2 text-muted-foreground">{designError}</p>
       </div>
     );
   }
 
-  if (!TemplateComponent) {
+  if (!DesignComponent || !effectiveFeatures) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
         <Skeleton className="h-12 w-64" />
@@ -113,26 +132,11 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
     );
   }
 
-  // Helper to format yyyy-MM-dd to "Month DD, YYYY"
-  const formatWeddingDate = (dateString: string): string => {
-    const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    const [year, month, day] = dateString.split("-");
-    const monthName = months[parseInt(month, 10) - 1];
-    return `${monthName} ${parseInt(day, 10)}, ${year}`;
-  };
-
-  // Prepare template props
-  const templateProps: WeddingTemplateProps = {
+  const props: WeddingDesignProps = {
     wedding: {
       _id: wedding._id,
       name: wedding.name,
       slug: wedding.slug,
-      // Use canonical weddingDate field, formatted for display
-      date: wedding.weddingDate ? formatWeddingDate(wedding.weddingDate) : undefined,
-      // Pass canonical yyyy-MM-dd format for countdown computation
       weddingDate: wedding.weddingDate,
       navbarLogoLightUrl: wedding.navbarLogoLightUrl,
       navbarLogoDarkUrl: wedding.navbarLogoDarkUrl,
@@ -140,64 +144,18 @@ export function WeddingRenderer({ slug, isPreview = false }: WeddingRendererProp
       venueName: wedding.venueName,
       venueLocation: wedding.venueLocation,
     },
-    theme: wedding.theme as WeddingTheme,
-    sections: {
-      enabled: wedding.enabledSections as SectionKey[],
-      content: wedding.sectionContent as SectionContentMap,
-    },
+    features: effectiveFeatures,
+    media: mediaItems ?? [],
+    rsvpConfig: rsvpConfig ?? null,
+    giftOptions: giftOptions ?? [],
     isPreview,
   };
 
-  // Derive navigation items from enabled sections
-  // Labels come from section content titles with sensible fallbacks
-  const sectionLabelDefaults: Record<SectionKey, string> = {
-    hero: "Home",
-    countdown: "Countdown",
-    itinerary: "Itinerary",
-    photos: "Photos",
-    location: "Location",
-    lodging: "Lodging",
-    dressCode: "Dress Code",
-    gifts: "Gifts",
-    rsvp: "RSVP",
-  };
-
-  // Define the desired navbar order (excluding hero, countdown, and photos)
-  const navbarOrder: SectionKey[] = [
-    "itinerary",
-    "location",
-    "lodging",
-    "dressCode",
-    "gifts",
-    "rsvp",
-  ];
-
-  // Build nav items in the specified order, only including enabled sections
-  const enabledSet = new Set(templateProps.sections.enabled);
-  const navItems = navbarOrder
-    .filter((key) => enabledSet.has(key))
-    .map((key) => {
-      const sectionContent = templateProps.sections.content[key];
-      const title = sectionContent && 'title' in sectionContent ? sectionContent.title : undefined;
-      return {
-        key,
-        label: title || sectionLabelDefaults[key],
-        href: `#${key}`,
-      };
-    });
-
   return (
-    <WeddingThemeWrapper theme={templateProps.theme}>
+    <div className="min-h-screen bg-background text-foreground">
       {isPreview && <PreviewBanner />}
-      <WeddingNavbar
-        weddingName={wedding.name}
-        navbarLogoLightUrl={wedding.navbarLogoLightUrl}
-        navbarLogoDarkUrl={wedding.navbarLogoDarkUrl}
-        isPreview={isPreview}
-        navItems={navItems}
-      />
-      <TemplateComponent {...templateProps} />
-    </WeddingThemeWrapper>
+      <DesignComponent {...props} />
+    </div>
   );
 }
 

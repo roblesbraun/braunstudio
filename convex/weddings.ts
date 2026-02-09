@@ -1,18 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { auth } from "./auth";
 import { assertPlatformAdmin, assertAuthenticated } from "./authz";
-
-// Helper to format yyyy-MM-dd date string to "Month DD, YYYY"
-function formatWeddingDate(dateString: string): string {
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-  const [year, month, day] = dateString.split("-");
-  const monthName = months[parseInt(month, 10) - 1];
-  return `${monthName} ${parseInt(day, 10)}, ${year}`;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // QUERIES
@@ -32,7 +20,6 @@ export const list = query({
 /**
  * Get a wedding by slug (public - used by wedding renderer)
  * Resolves storage URLs for navbar logos (light/dark) and hero image if present
- * Also resolves photo URLs in sectionContent.photos.images[]
  */
 export const getBySlug = query({
   args: { slug: v.string() },
@@ -64,30 +51,8 @@ export const getBySlug = query({
       heroImageUrl = url ?? undefined;
     }
 
-    // Resolve photo URLs in sectionContent.photos.images[]
-    let sectionContent = wedding.sectionContent;
-    if (sectionContent.photos?.images && Array.isArray(sectionContent.photos.images)) {
-      const imagesWithUrls = await Promise.all(
-        sectionContent.photos.images.map(async (image: any) => {
-          if (image.storageId) {
-            const url = await ctx.storage.getUrl(image.storageId);
-            return { ...image, url: url ?? undefined };
-          }
-          return image;
-        })
-      );
-      sectionContent = {
-        ...sectionContent,
-        photos: {
-          ...sectionContent.photos,
-          images: imagesWithUrls,
-        },
-      };
-    }
-
     return {
       ...wedding,
-      sectionContent,
       navbarLogoLightUrl,
       navbarLogoDarkUrl,
       heroImageUrl,
@@ -98,7 +63,6 @@ export const getBySlug = query({
 /**
  * Get a wedding by ID (authenticated)
  * Resolves storage URLs for navbar logos (light/dark) and hero image if present
- * Also resolves photo URLs in sectionContent.photos.images[]
  */
 export const get = query({
   args: { id: v.id("weddings") },
@@ -128,30 +92,8 @@ export const get = query({
       heroImageUrl = url ?? undefined;
     }
 
-    // Resolve photo URLs in sectionContent.photos.images[]
-    let sectionContent = wedding.sectionContent;
-    if (sectionContent.photos?.images && Array.isArray(sectionContent.photos.images)) {
-      const imagesWithUrls = await Promise.all(
-        sectionContent.photos.images.map(async (image: any) => {
-          if (image.storageId) {
-            const url = await ctx.storage.getUrl(image.storageId);
-            return { ...image, url: url ?? undefined };
-          }
-          return image;
-        })
-      );
-      sectionContent = {
-        ...sectionContent,
-        photos: {
-          ...sectionContent.photos,
-          images: imagesWithUrls,
-        },
-      };
-    }
-
     return {
       ...wedding,
-      sectionContent,
       navbarLogoLightUrl,
       navbarLogoDarkUrl,
       heroImageUrl,
@@ -219,10 +161,16 @@ export const create = mutation({
   args: {
     name: v.string(),
     slug: v.string(),
-    templateId: v.string(),
-    templateVersion: v.string(),
+    designId: v.string(),
     weddingDate: v.string(), // Required: yyyy-MM-dd format
     coupleEmails: v.optional(v.array(v.string())),
+    features: v.optional(
+      v.object({
+        rsvp: v.boolean(),
+        gifts: v.boolean(),
+        whatsapp: v.boolean(),
+      })
+    ),
   },
   handler: async (ctx, args) => {
     await assertPlatformAdmin(ctx);
@@ -249,39 +197,20 @@ export const create = mutation({
       throw new Error("Wedding date must be in yyyy-MM-dd format");
     }
 
-    // Format the wedding date for display in hero section
-    const formattedDate = formatWeddingDate(args.weddingDate);
-
     const weddingId = await ctx.db.insert("weddings", {
       name: args.name,
       slug: args.slug,
-      status: "draft",
-      templateId: args.templateId,
-      templateVersion: args.templateVersion,
+      designId: args.designId,
+      features: args.features ?? {
+        rsvp: false,
+        gifts: false,
+        whatsapp: false,
+      },
+      deployment: {
+        state: "preview",
+      },
       weddingDate: args.weddingDate,
-      // All mandatory sections enabled by default
-      enabledSections: [
-        "hero",
-        "itinerary",
-        "photos",
-        "location",
-        "lodging",
-        "dressCode",
-        "gifts",
-        "rsvp",
-      ],
-      // Initialize hero section with formatted wedding date
-      sectionContent: {
-        hero: {
-          date: formattedDate,
-        },
-      },
-      theme: {
-        light: {},
-        dark: {},
-      },
       stripe: {
-        mode: "wishlist",
         connected: false,
       },
       paymentStatus: "unpaid",
@@ -300,11 +229,7 @@ export const update = mutation({
   args: {
     id: v.id("weddings"),
     name: v.optional(v.string()),
-    templateId: v.optional(v.string()),
-    templateVersion: v.optional(v.string()),
     weddingDate: v.optional(v.string()), // yyyy-MM-dd format
-    enabledSections: v.optional(v.array(v.string())),
-    sectionContent: v.optional(v.record(v.string(), v.any())),
     coupleEmails: v.optional(v.array(v.string())),
     navbarLogoLightStorageId: v.optional(v.string()),
     navbarLogoDarkStorageId: v.optional(v.string()),
@@ -319,21 +244,8 @@ export const update = mutation({
       throw new Error("Wedding not found");
     }
 
-    // Cannot change template if wedding is live
-    if (
-      wedding.status === "live" &&
-      (args.templateId || args.templateVersion)
-    ) {
-      throw new Error("Cannot change template for a live wedding");
-    }
-
     const updates: Partial<typeof wedding> = {};
     if (args.name !== undefined) updates.name = args.name;
-    if (args.templateId !== undefined) updates.templateId = args.templateId;
-    if (args.templateVersion !== undefined)
-      updates.templateVersion = args.templateVersion;
-    if (args.enabledSections !== undefined)
-      updates.enabledSections = args.enabledSections;
     if (args.coupleEmails !== undefined)
       updates.coupleEmails = args.coupleEmails;
     if (args.navbarLogoLightStorageId !== undefined)
@@ -345,28 +257,14 @@ export const update = mutation({
     if (args.venueLocation !== undefined)
       updates.venueLocation = args.venueLocation;
 
-    // Handle weddingDate update: sync to hero section date
+    // Handle weddingDate update
     if (args.weddingDate !== undefined) {
       // Validate date format
       if (!/^\d{4}-\d{2}-\d{2}$/.test(args.weddingDate)) {
         throw new Error("Wedding date must be in yyyy-MM-dd format");
       }
-      
+
       updates.weddingDate = args.weddingDate;
-      
-      // Update hero section date in sectionContent
-      const formattedDate = formatWeddingDate(args.weddingDate);
-      const currentContent = args.sectionContent ?? wedding.sectionContent;
-      updates.sectionContent = {
-        ...currentContent,
-        hero: {
-          ...(currentContent.hero || {}),
-          date: formattedDate,
-        },
-      };
-    } else if (args.sectionContent !== undefined) {
-      // If only sectionContent is being updated (without weddingDate), use it as-is
-      updates.sectionContent = args.sectionContent;
     }
 
     await ctx.db.patch(args.id, updates);
@@ -377,50 +275,37 @@ export const update = mutation({
 /**
  * Update wedding theme colors (admin only)
  */
-export const updateTheme = mutation({
+/**
+ * Update design implementation (admin only)
+ */
+export const updateDesign = mutation({
   args: {
     id: v.id("weddings"),
-    theme: v.object({
-      light: v.object({
-        background: v.optional(v.string()),
-        foreground: v.optional(v.string()),
-        card: v.optional(v.string()),
-        cardForeground: v.optional(v.string()),
-        popover: v.optional(v.string()),
-        popoverForeground: v.optional(v.string()),
-        primary: v.optional(v.string()),
-        primaryForeground: v.optional(v.string()),
-        secondary: v.optional(v.string()),
-        secondaryForeground: v.optional(v.string()),
-        muted: v.optional(v.string()),
-        mutedForeground: v.optional(v.string()),
-        accent: v.optional(v.string()),
-        accentForeground: v.optional(v.string()),
-        destructive: v.optional(v.string()),
-        border: v.optional(v.string()),
-        input: v.optional(v.string()),
-        ring: v.optional(v.string()),
-      }),
-      dark: v.object({
-        background: v.optional(v.string()),
-        foreground: v.optional(v.string()),
-        card: v.optional(v.string()),
-        cardForeground: v.optional(v.string()),
-        popover: v.optional(v.string()),
-        popoverForeground: v.optional(v.string()),
-        primary: v.optional(v.string()),
-        primaryForeground: v.optional(v.string()),
-        secondary: v.optional(v.string()),
-        secondaryForeground: v.optional(v.string()),
-        muted: v.optional(v.string()),
-        mutedForeground: v.optional(v.string()),
-        accent: v.optional(v.string()),
-        accentForeground: v.optional(v.string()),
-        destructive: v.optional(v.string()),
-        border: v.optional(v.string()),
-        input: v.optional(v.string()),
-        ring: v.optional(v.string()),
-      }),
+    designId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await assertPlatformAdmin(ctx);
+
+    const wedding = await ctx.db.get(args.id);
+    if (!wedding) {
+      throw new Error("Wedding not found");
+    }
+
+    await ctx.db.patch(args.id, { designId: args.designId });
+    return args.id;
+  },
+});
+
+/**
+ * Update per-wedding feature flags (admin only)
+ */
+export const updateFeatures = mutation({
+  args: {
+    id: v.id("weddings"),
+    features: v.object({
+      rsvp: v.boolean(),
+      gifts: v.boolean(),
+      whatsapp: v.boolean(),
     }),
   },
   handler: async (ctx, args) => {
@@ -431,24 +316,17 @@ export const updateTheme = mutation({
       throw new Error("Wedding not found");
     }
 
-    await ctx.db.patch(args.id, {
-      theme: args.theme,
-    });
+    await ctx.db.patch(args.id, { features: args.features });
     return args.id;
   },
 });
 
 /**
- * Transition wedding status (admin only)
+ * Deploy a wedding live (admin only)
  */
-export const updateStatus = mutation({
+export const deployLive = mutation({
   args: {
     id: v.id("weddings"),
-    status: v.union(
-      v.literal("draft"),
-      v.literal("pending_payment"),
-      v.literal("live")
-    ),
   },
   handler: async (ctx, args) => {
     await assertPlatformAdmin(ctx);
@@ -458,26 +336,19 @@ export const updateStatus = mutation({
       throw new Error("Wedding not found");
     }
 
-    // Validate status transitions
-    const validTransitions: Record<string, string[]> = {
-      draft: ["pending_payment", "live"],
-      pending_payment: ["live", "draft"],
-      live: [], // Cannot transition away from live
-    };
-
-    if (!validTransitions[wedding.status]?.includes(args.status)) {
-      throw new Error(
-        `Cannot transition from ${wedding.status} to ${args.status}`
-      );
-    }
-
-    await ctx.db.patch(args.id, { status: args.status });
+    await ctx.db.patch(args.id, {
+      deployment: {
+        state: "live",
+        deployedAt: Date.now(),
+        deployedBy: await assertAuthenticated(ctx),
+      },
+    });
     return args.id;
   },
 });
 
 /**
- * Delete a wedding (admin only, draft only)
+ * Delete a wedding (admin only, draft or preview only)
  */
 export const remove = mutation({
   args: { id: v.id("weddings") },
@@ -489,8 +360,8 @@ export const remove = mutation({
       throw new Error("Wedding not found");
     }
 
-    if (wedding.status !== "draft") {
-      throw new Error("Can only delete draft weddings");
+    if (wedding.deployment.state === "live") {
+      throw new Error("Can only delete draft or preview weddings");
     }
 
     // Delete associated members
